@@ -160,10 +160,11 @@ export async function POST(request: NextRequest) {
 
         await supabase.from('school_modules').insert(moduleInserts)
 
+        const domain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
         return NextResponse.json({
             success: true,
             school,
-            message: `School created successfully! Access URL: ${slug}.yourapp.com`
+            message: `School created successfully! Access URL: ${slug}.${domain}`
         }, { status: 201 })
 
     } catch (error) {
