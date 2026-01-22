@@ -143,7 +143,8 @@ function LoginForm() {
             const result = await login({
                 email,
                 password,
-                schoolSlug: schoolSlug || undefined
+                schoolSlug: schoolSlug || undefined,
+                selectedRole: selectedRole || undefined
             })
 
             if (!result.success) {

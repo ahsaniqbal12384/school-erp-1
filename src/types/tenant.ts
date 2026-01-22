@@ -31,6 +31,7 @@ export interface LoginCredentials {
     email: string
     password: string
     schoolSlug?: string
+    selectedRole?: string  // The role user selected on login page
 }
 
 export interface School {

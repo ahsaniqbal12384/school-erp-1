@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
         const supabase = createServerClient()
         const body = await request.json()
 
-        const { email, password, schoolSlug } = body
+        const { email, password, schoolSlug, selectedRole } = body
 
         if (!email || !password) {
             return NextResponse.json(
@@ -65,6 +65,29 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: 'Invalid email or password' },
                 { status: 401 }
+            )
+        }
+
+        // Validate selected role matches user's actual role
+        if (selectedRole && selectedRole !== user.role) {
+            // Map roles for friendly error messages
+            const roleLabels: Record<string, string> = {
+                'super_admin': 'Super Admin',
+                'school_admin': 'Admin',
+                'teacher': 'Teacher',
+                'parent': 'Parent',
+                'student': 'Student',
+                'accountant': 'Accountant',
+                'librarian': 'Librarian',
+                'transport_manager': 'Transport Manager'
+            }
+
+            const selectedLabel = roleLabels[selectedRole] || selectedRole
+            const actualLabel = roleLabels[user.role] || user.role
+
+            return NextResponse.json(
+                { error: `You are registered as ${actualLabel}, not ${selectedLabel}. Please select the correct role.` },
+                { status: 403 }
             )
         }
 
