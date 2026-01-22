@@ -90,31 +90,38 @@ function LoginForm() {
     return (
         <div className="min-h-screen flex">
             {/* Left Branding Panel */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-purple-700 p-12 flex-col justify-between text-white">
-                <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-purple-700 p-12 flex-col justify-between text-white relative overflow-hidden">
+                {/* Animated background elements */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
+                </div>
+                
+                <div className="flex items-center gap-3 relative z-10 animate-slide-in-left">
+                    <div className="h-12 w-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center animate-float">
                         <GraduationCap className="h-7 w-7" />
                     </div>
                     <h1 className="text-2xl font-bold">School ERP</h1>
                 </div>
-                <div className="space-y-6">
-                    <h2 className="text-5xl font-bold leading-tight">Empowering Schools,<br />Enabling Futures.</h2>
-                    <p className="text-lg text-white/80 max-w-md">Pakistan&apos;s most advanced multi-tenant platform for school management and student success.</p>
+                <div className="space-y-6 relative z-10">
+                    <h2 className="text-5xl font-bold leading-tight animate-slide-up">Empowering Schools,<br />Enabling Futures.</h2>
+                    <p className="text-lg text-white/80 max-w-md animate-slide-up" style={{ animationDelay: '0.2s' }}>Pakistan&apos;s most advanced multi-tenant platform for school management and student success.</p>
                 </div>
-                <div className="text-sm opacity-60">© 2024 School ERP Platform</div>
+                <div className="text-sm opacity-60 relative z-10">© 2024 School ERP Platform</div>
             </div>
 
             {/* Login Form Panel */}
             <div className="flex-1 flex items-center justify-center p-8">
-                <div className="w-full max-w-md space-y-8">
+                <div className="w-full max-w-md space-y-8 animate-fade-in">
                     {schoolSlug && (
-                        <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg justify-center">
+                        <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg justify-center animate-bounce-in">
                             <Building2 className="h-5 w-5 text-primary" />
                             <span className="font-semibold uppercase">{schoolSlug} Portal</span>
                         </div>
                     )}
 
-                    <Card className="shadow-2xl border-0">
+                    <Card className="shadow-2xl border-0 animate-slide-up">
                         <CardHeader className="text-center">
                             <CardTitle className="text-3xl font-bold">Sign In</CardTitle>
                             <CardDescription>Enter your credentials to manage your school</CardDescription>
@@ -122,14 +129,14 @@ function LoginForm() {
                         <CardContent>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 {error && (
-                                    <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-center gap-2 text-sm">
+                                    <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-center gap-2 text-sm animate-shake">
                                         <AlertCircle className="h-4 w-4" /> {error}
                                     </div>
                                 )}
                                 <div className="space-y-2">
                                     <Label>Email Address</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <div className="relative group">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
                                         <Input
                                             placeholder="name@school.edu"
                                             className="pl-10"
