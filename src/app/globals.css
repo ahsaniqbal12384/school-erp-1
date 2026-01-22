@@ -146,6 +146,23 @@
   --sidebar-ring: oklch(0.65 0.18 160);
 }
 
+/* School Branding CSS Variables - Applied dynamically */
+:root {
+  --school-primary: var(--primary);
+  --school-secondary: var(--secondary);
+  --school-accent: var(--accent);
+}
+
+/* Override primary color when school branding is set */
+[data-school-branding="true"] {
+  --primary: var(--school-primary);
+  --secondary: var(--school-secondary);
+  --accent: var(--school-accent);
+  --ring: var(--school-primary);
+  --sidebar-primary: var(--school-primary);
+  --sidebar-ring: var(--school-primary);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

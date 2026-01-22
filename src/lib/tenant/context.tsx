@@ -48,14 +48,23 @@ export function TenantProvider({ children, schoolSlug }: TenantProviderProps) {
                 // Apply school branding colors
                 if (typeof document !== 'undefined') {
                     const root = document.documentElement
+                    
+                    // Enable branding mode
+                    root.setAttribute('data-school-branding', 'true')
+                    
                     if (settingsData.primary_color) {
                         root.style.setProperty('--school-primary', settingsData.primary_color)
+                        root.style.setProperty('--primary', settingsData.primary_color)
+                        root.style.setProperty('--ring', settingsData.primary_color)
+                        root.style.setProperty('--sidebar-primary', settingsData.primary_color)
                     }
                     if (settingsData.secondary_color) {
                         root.style.setProperty('--school-secondary', settingsData.secondary_color)
+                        root.style.setProperty('--secondary', settingsData.secondary_color)
                     }
                     if (settingsData.accent_color) {
                         root.style.setProperty('--school-accent', settingsData.accent_color)
+                        root.style.setProperty('--accent', settingsData.accent_color)
                     }
                 }
             }

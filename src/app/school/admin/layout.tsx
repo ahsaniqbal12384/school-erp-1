@@ -1,16 +1,49 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { useAuth } from '@/lib/auth/context'
+import { getUserFullName } from '@/types/tenant'
+import { Loader2 } from 'lucide-react'
 
 export default function SchoolAdminLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    // In production, this would come from the authenticated user session
-    const mockUser = {
-        name: 'Ahmad Khan',
-        email: 'admin@alnoorschool.pk',
-        avatar: undefined,
+    const router = useRouter()
+    const { user, school, isLoading, isAuthenticated } = useAuth()
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/login')
+        } else if (!isLoading && user && user.role !== 'school_admin') {
+            router.push('/login')
+        }
+    }, [isLoading, isAuthenticated, user, router])
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!isAuthenticated || !user || user.role !== 'school_admin') {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    const currentUser = {
+        name: getUserFullName(user),
+        email: user.email,
+        avatar: user.avatar_url || undefined,
     }
 
     return (
@@ -19,8 +52,8 @@ export default function SchoolAdminLayout({
             <div className="flex flex-1 flex-col overflow-hidden">
                 <Header
                     role="school_admin"
-                    user={mockUser}
-                    schoolName="Al-Noor Public School"
+                    user={currentUser}
+                    schoolName={school?.name || 'School'}
                 />
                 <main className="flex-1 overflow-y-auto p-6 lg:p-8">
                     {children}
