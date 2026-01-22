@@ -152,7 +152,7 @@ export default function SchoolSettingsPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">School Settings</h1>
                     <p className="text-muted-foreground">
-                        Customize your school's profile, branding, and preferences
+                                        Customize your school&apos;s profile, branding, and preferences
                     </p>
                 </div>
                 <Button
@@ -341,7 +341,7 @@ export default function SchoolSettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Logo & Images</CardTitle>
-                                <CardDescription>Upload your school's logo and branding images</CardDescription>
+                                <CardDescription>Upload your school&apos;s logo and branding images</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="flex items-center gap-6">
@@ -369,7 +369,7 @@ export default function SchoolSettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Color Theme</CardTitle>
-                                <CardDescription>Customize your school's color scheme</CardDescription>
+                                <CardDescription>Customize your school&apos;s color scheme</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid gap-4 md:grid-cols-3">

@@ -46,7 +46,18 @@ export function TenantProvider({ children, schoolSlug }: TenantProviderProps) {
             if (settingsData) {
                 setSettings(settingsData)
                 // Apply school branding colors
-                applySchoolTheme(settingsData)
+                if (typeof document !== 'undefined') {
+                    const root = document.documentElement
+                    if (settingsData.primary_color) {
+                        root.style.setProperty('--school-primary', settingsData.primary_color)
+                    }
+                    if (settingsData.secondary_color) {
+                        root.style.setProperty('--school-secondary', settingsData.secondary_color)
+                    }
+                    if (settingsData.accent_color) {
+                        root.style.setProperty('--school-accent', settingsData.accent_color)
+                    }
+                }
             }
 
             // Fetch enabled modules
@@ -67,22 +78,6 @@ export function TenantProvider({ children, schoolSlug }: TenantProviderProps) {
         }
     }, [])
 
-    // Apply school colors to CSS variables
-    const applySchoolTheme = (settings: SchoolSettings) => {
-        if (typeof document !== 'undefined') {
-            const root = document.documentElement
-            if (settings.primary_color) {
-                root.style.setProperty('--school-primary', settings.primary_color)
-            }
-            if (settings.secondary_color) {
-                root.style.setProperty('--school-secondary', settings.secondary_color)
-            }
-            if (settings.accent_color) {
-                root.style.setProperty('--school-accent', settings.accent_color)
-            }
-        }
-    }
-
     // Check if school has access to a module
     const hasModule = useCallback((moduleName: ModuleName): boolean => {
         return modules.includes(moduleName)
@@ -90,17 +85,24 @@ export function TenantProvider({ children, schoolSlug }: TenantProviderProps) {
 
     // Fetch school on mount if slug provided
     useEffect(() => {
-        if (schoolSlug) {
-            fetchSchoolBySlug(schoolSlug)
-        } else {
-            // Try to get slug from localStorage or URL
-            const storedSlug = localStorage.getItem('school_slug')
-            if (storedSlug) {
-                fetchSchoolBySlug(storedSlug)
+        let mounted = true
+
+        async function init() {
+            if (schoolSlug) {
+                await fetchSchoolBySlug(schoolSlug)
             } else {
-                setIsLoading(false)
+                // Try to get slug from localStorage or URL
+                const storedSlug = localStorage.getItem('school_slug')
+                if (storedSlug && mounted) {
+                    await fetchSchoolBySlug(storedSlug)
+                } else if (mounted) {
+                    setIsLoading(false)
+                }
             }
         }
+
+        init()
+        return () => { mounted = false }
     }, [schoolSlug, fetchSchoolBySlug])
 
     const value: TenantContextType = {

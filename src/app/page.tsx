@@ -62,7 +62,7 @@ export default function HomePage() {
               </h1>
               <p className="max-w-lg text-lg text-white/70">
                 A powerful, all-in-one ERP designed specifically for Pakistani schools.
-                Manage admissions, fees, attendance, exams, transport, library - everything in one place.
+                Manage admissions, fees, attendance, exams, transport, library &mdash; everything in one place.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/register">
@@ -253,7 +253,7 @@ export default function HomePage() {
               Simple, Transparent Pricing
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Choose the plan that fits your school's size
+              Choose the plan that fits your school&apos;s size
             </p>
           </div>
 

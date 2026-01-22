@@ -51,19 +51,30 @@ function LoginForm() {
             else if (user.role === 'teacher') router.push('/school/teacher')
             else router.push('/portal')
         }
+    }, [isAuthenticated, user, router])
 
+    useEffect(() => {
         // Detect school slug from hostname or params
         if (typeof window !== 'undefined') {
             const hostname = window.location.hostname
             const parts = hostname.split('.')
             if (parts.length >= 2 && parts[0] !== 'localhost' && parts[0] !== 'www') {
-                setSchoolSlug(parts[0])
+                const slug = parts[0]
+                const timer = setTimeout(() => {
+                    setSchoolSlug(prev => prev !== slug ? slug : prev)
+                }, 0)
+                return () => clearTimeout(timer)
             } else {
                 const param = searchParams.get('school')
-                if (param) setSchoolSlug(param)
+                if (param) {
+                    const timer = setTimeout(() => {
+                        setSchoolSlug(prev => prev !== param ? param : prev)
+                    }, 0)
+                    return () => clearTimeout(timer)
+                }
             }
         }
-    }, [isAuthenticated, user, router, searchParams])
+    }, [searchParams])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -88,7 +99,7 @@ function LoginForm() {
                 </div>
                 <div className="space-y-6">
                     <h2 className="text-5xl font-bold leading-tight">Empowering Schools,<br />Enabling Futures.</h2>
-                    <p className="text-lg text-white/80 max-w-md">Nigeria's most advanced multi-tenant platform for school management and student success.</p>
+                    <p className="text-lg text-white/80 max-w-md">Pakistan&apos;s most advanced multi-tenant platform for school management and student success.</p>
                 </div>
                 <div className="text-sm opacity-60">© 2024 School ERP Platform</div>
             </div>
