@@ -24,19 +24,6 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs'
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -61,7 +48,6 @@ import {
     Eye,
     Edit,
     Trash2,
-    Users,
     GraduationCap,
     CheckCircle,
     XCircle,
@@ -72,8 +58,10 @@ import {
     Shield,
     Loader2,
     RefreshCw,
+    Power,
+    PowerOff,
 } from 'lucide-react'
-import { AVAILABLE_MODULES, School, SubscriptionPlan, SubscriptionStatus } from '@/types/tenant'
+import { AVAILABLE_MODULES, School, SubscriptionStatus } from '@/types/tenant'
 import { useToast } from '@/hooks/use-toast'
 
 // Extended school type to include related data from API
@@ -84,23 +72,23 @@ interface SchoolWithRelations extends School {
 
 export default function SchoolsManagementPage() {
     const { toast } = useToast()
-    
+
     // State
     const [schools, setSchools] = useState<SchoolWithRelations[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
-    const [planFilter, setPlanFilter] = useState<string>('all')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [isModulesDialogOpen, setIsModulesDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false)
     const [selectedSchool, setSelectedSchool] = useState<SchoolWithRelations | null>(null)
     const [enabledModules, setEnabledModules] = useState<string[]>([])
     const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 })
 
-    // New/Edit school form state
+    // New/Edit school form state (simplified - no subscription plan)
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
@@ -109,7 +97,6 @@ export default function SchoolsManagementPage() {
         city: '',
         address: '',
         principal_name: '',
-        subscription_plan: 'basic',
     })
 
     // Fetch schools from API
@@ -120,9 +107,8 @@ export default function SchoolsManagementPage() {
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
             })
-            
+
             if (statusFilter !== 'all') params.append('status', statusFilter)
-            if (planFilter !== 'all') params.append('plan', planFilter)
             if (searchQuery) params.append('search', searchQuery)
 
             const response = await fetch(`/api/schools?${params.toString()}`)
@@ -158,7 +144,7 @@ export default function SchoolsManagementPage() {
         } finally {
             setIsLoading(false)
         }
-    }, [pagination.page, pagination.limit, statusFilter, planFilter, searchQuery, toast])
+    }, [pagination.page, pagination.limit, statusFilter, searchQuery, toast])
 
     // Fetch schools on mount and when filters change
     useEffect(() => {
@@ -173,7 +159,7 @@ export default function SchoolsManagementPage() {
         return () => clearTimeout(timer)
     }, [searchQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Create new school
+    // Create new school (simplified - no subscription plan)
     const handleCreateSchool = async () => {
         if (!formData.name || !formData.slug || !formData.email) {
             toast({
@@ -189,7 +175,10 @@ export default function SchoolsManagementPage() {
             const response = await fetch('/api/schools', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    subscription_plan: 'basic', // Default plan, but we control modules manually
+                }),
             })
 
             const data = await response.json()
@@ -200,7 +189,7 @@ export default function SchoolsManagementPage() {
 
             toast({
                 title: "Success!",
-                description: data.message || "School created successfully",
+                description: "School created successfully. You can now configure modules.",
             })
 
             setIsAddDialogOpen(false)
@@ -256,7 +245,53 @@ export default function SchoolsManagementPage() {
         }
     }
 
-    // Delete/Deactivate school
+    // Suspend/Activate school
+    const handleToggleSchoolStatus = async () => {
+        if (!selectedSchool) return
+
+        const newStatus = selectedSchool.subscription_status === 'suspended' ? 'active' : 'suspended'
+        const newIsActive = newStatus === 'active'
+
+        setIsSaving(true)
+        try {
+            const response = await fetch(`/api/schools/${selectedSchool.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subscription_status: newStatus,
+                    is_active: newIsActive
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to update school status')
+            }
+
+            toast({
+                title: "Success!",
+                description: newStatus === 'suspended'
+                    ? "School has been suspended. Users cannot login."
+                    : "School has been activated.",
+            })
+
+            setIsSuspendDialogOpen(false)
+            setSelectedSchool(null)
+            fetchSchools()
+        } catch (error) {
+            console.error('Error updating school status:', error)
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to update school status",
+                variant: "destructive",
+            })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // Delete/Deactivate school (permanent)
     const handleDeleteSchool = async () => {
         if (!selectedSchool) return
 
@@ -274,7 +309,7 @@ export default function SchoolsManagementPage() {
 
             toast({
                 title: "Success!",
-                description: data.message || "School has been deactivated",
+                description: data.message || "School has been deleted",
             })
 
             setIsDeleteDialogOpen(false)
@@ -339,7 +374,6 @@ export default function SchoolsManagementPage() {
             city: '',
             address: '',
             principal_name: '',
-            subscription_plan: 'basic',
         })
         setSelectedSchool(null)
     }
@@ -354,7 +388,6 @@ export default function SchoolsManagementPage() {
             city: school.city || '',
             address: school.address || '',
             principal_name: school.principal_name || '',
-            subscription_plan: school.subscription_plan,
         })
         setIsEditDialogOpen(true)
     }
@@ -370,6 +403,11 @@ export default function SchoolsManagementPage() {
         setIsDeleteDialogOpen(true)
     }
 
+    const openSuspendDialog = (school: SchoolWithRelations) => {
+        setSelectedSchool(school)
+        setIsSuspendDialogOpen(true)
+    }
+
     const toggleModule = (moduleName: string) => {
         if (enabledModules.includes(moduleName)) {
             setEnabledModules(enabledModules.filter(m => m !== moduleName))
@@ -379,7 +417,6 @@ export default function SchoolsManagementPage() {
     }
 
     const copySchoolUrl = (slug: string) => {
-        // Use actual domain from environment or fallback
         const domain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
         const url = `${slug}.${domain}`
         navigator.clipboard.writeText(url)
@@ -389,14 +426,17 @@ export default function SchoolsManagementPage() {
         })
     }
 
-    const getStatusBadge = (status: SubscriptionStatus) => {
+    const getStatusBadge = (status: SubscriptionStatus, isActive: boolean) => {
+        if (!isActive) {
+            return <Badge className="bg-gray-500/10 text-gray-500"><XCircle className="w-3 h-3 mr-1" />Deleted</Badge>
+        }
         switch (status) {
             case 'active':
                 return <Badge className="bg-green-500/10 text-green-500"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>
             case 'trial':
                 return <Badge className="bg-blue-500/10 text-blue-500"><Clock className="w-3 h-3 mr-1" />Trial</Badge>
             case 'suspended':
-                return <Badge className="bg-red-500/10 text-red-500"><XCircle className="w-3 h-3 mr-1" />Suspended</Badge>
+                return <Badge className="bg-red-500/10 text-red-500"><PowerOff className="w-3 h-3 mr-1" />Suspended</Badge>
             case 'expired':
                 return <Badge className="bg-gray-500/10 text-gray-500"><AlertCircle className="w-3 h-3 mr-1" />Expired</Badge>
             case 'cancelled':
@@ -406,25 +446,10 @@ export default function SchoolsManagementPage() {
         }
     }
 
-    const getPlanBadge = (plan: SubscriptionPlan) => {
-        switch (plan) {
-            case 'basic':
-                return <Badge variant="outline">Basic</Badge>
-            case 'standard':
-                return <Badge variant="outline" className="border-blue-500 text-blue-500">Standard</Badge>
-            case 'premium':
-                return <Badge variant="outline" className="border-purple-500 text-purple-500">Premium</Badge>
-            case 'enterprise':
-                return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Enterprise</Badge>
-            default:
-                return <Badge variant="outline">{plan}</Badge>
-        }
-    }
-
     // Stats calculations
-    const totalSchools = schools.length
-    const activeSchools = schools.filter(s => s.subscription_status === 'active').length
-    const trialSchools = schools.filter(s => s.subscription_status === 'trial').length
+    const totalSchools = schools.filter(s => s.is_active).length
+    const activeSchools = schools.filter(s => s.subscription_status === 'active' && s.is_active).length
+    const suspendedSchools = schools.filter(s => s.subscription_status === 'suspended').length
     const totalStudents = schools.reduce((acc, s) => acc + (s.current_students || 0), 0)
 
     // Get the current domain for display
@@ -436,7 +461,7 @@ export default function SchoolsManagementPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Schools Management</h1>
                     <p className="text-muted-foreground">
-                        Create and manage schools, subscriptions, and module access
+                        Create schools, control modules, and manage access
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -458,153 +483,78 @@ export default function SchoolsManagementPage() {
                             <DialogHeader>
                                 <DialogTitle>Create New School</DialogTitle>
                                 <DialogDescription>
-                                    Add a new school to the platform. They will get a unique subdomain.
+                                    Add a new school. After creation, you can configure which modules they can access.
                                 </DialogDescription>
                             </DialogHeader>
-                            <Tabs defaultValue="info" className="mt-4">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="info">School Information</TabsTrigger>
-                                    <TabsTrigger value="subscription">Subscription</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="info" className="space-y-4 mt-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>School Name *</Label>
-                                            <Input
-                                                placeholder="City Grammar School"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>URL Slug *</Label>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    placeholder="citygrammar"
-                                                    value={formData.slug}
-                                                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                URL: <span className="font-mono">{formData.slug || 'schoolname'}.{displayDomain}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Email *</Label>
-                                            <Input
-                                                type="email"
-                                                placeholder="admin@school.pk"
-                                                value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Phone</Label>
-                                            <Input
-                                                placeholder="+92-42-XXXXXXX"
-                                                value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>City</Label>
-                                            <Input
-                                                placeholder="Lahore"
-                                                value={formData.city}
-                                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Principal Name</Label>
-                                            <Input
-                                                placeholder="Dr. Ahmad Khan"
-                                                value={formData.principal_name}
-                                                onChange={(e) => setFormData({ ...formData, principal_name: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
+                            <div className="space-y-4 mt-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Address</Label>
+                                        <Label>School Name *</Label>
                                         <Input
-                                            placeholder="123 Main Boulevard, DHA Phase 5"
-                                            value={formData.address}
-                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            placeholder="City Grammar School"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         />
                                     </div>
-                                </TabsContent>
-                                <TabsContent value="subscription" className="space-y-4 mt-4">
                                     <div className="space-y-2">
-                                        <Label>Subscription Plan</Label>
-                                        <Select
-                                            value={formData.subscription_plan}
-                                            onValueChange={(v) => setFormData({ ...formData, subscription_plan: v })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="basic">
-                                                    <div className="flex flex-col">
-                                                        <span>Basic - Rs. 2,999/month</span>
-                                                        <span className="text-xs text-muted-foreground">100 students, 20 staff</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="standard">
-                                                    <div className="flex flex-col">
-                                                        <span>Standard - Rs. 5,999/month</span>
-                                                        <span className="text-xs text-muted-foreground">500 students, 50 staff</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="premium">
-                                                    <div className="flex flex-col">
-                                                        <span>Premium - Rs. 9,999/month</span>
-                                                        <span className="text-xs text-muted-foreground">2000 students, 200 staff</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="enterprise">
-                                                    <div className="flex flex-col">
-                                                        <span>Enterprise - Rs. 19,999/month</span>
-                                                        <span className="text-xs text-muted-foreground">Unlimited</span>
-                                                    </div>
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Label>URL Slug *</Label>
+                                        <Input
+                                            placeholder="citygrammar"
+                                            value={formData.slug}
+                                            onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Access URL: <span className="font-mono text-primary">{formData.slug || 'schoolname'}.{displayDomain}</span>
+                                        </p>
                                     </div>
-                                    <Card className="bg-muted/50">
-                                        <CardContent className="pt-4">
-                                            <h4 className="font-medium mb-2">Default Modules for {formData.subscription_plan || 'Basic'} Plan:</h4>
-                                            <div className="flex flex-wrap gap-2">
-                                                {['students', 'staff', 'fees', 'attendance', 'communications'].map(mod => (
-                                                    <Badge key={mod} variant="secondary">{mod}</Badge>
-                                                ))}
-                                                {formData.subscription_plan === 'standard' && (
-                                                    <>
-                                                        <Badge variant="secondary">exams</Badge>
-                                                        <Badge variant="secondary">admissions</Badge>
-                                                        <Badge variant="secondary">homework</Badge>
-                                                    </>
-                                                )}
-                                                {(formData.subscription_plan === 'premium' || formData.subscription_plan === 'enterprise') && (
-                                                    <>
-                                                        <Badge variant="secondary">exams</Badge>
-                                                        <Badge variant="secondary">transport</Badge>
-                                                        <Badge variant="secondary">library</Badge>
-                                                        <Badge variant="secondary">timetable</Badge>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-2">
-                                                You can customize modules after creating the school.
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                            </Tabs>
-                            <div className="flex justify-end gap-3 mt-4">
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Email *</Label>
+                                        <Input
+                                            type="email"
+                                            placeholder="admin@school.pk"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Phone</Label>
+                                        <Input
+                                            placeholder="+92-42-XXXXXXX"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>City</Label>
+                                        <Input
+                                            placeholder="Lahore"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Principal Name</Label>
+                                        <Input
+                                            placeholder="Dr. Ahmad Khan"
+                                            value={formData.principal_name}
+                                            onChange={(e) => setFormData({ ...formData, principal_name: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Address</Label>
+                                    <Input
+                                        placeholder="123 Main Boulevard, DHA Phase 5"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
                                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
                                 <Button className="gradient-primary" onClick={handleCreateSchool} disabled={isSaving}>
                                     {isSaving ? (
@@ -629,7 +579,7 @@ export default function SchoolsManagementPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalSchools}</div>
-                        <p className="text-xs text-muted-foreground">Registered schools</p>
+                        <p className="text-xs text-muted-foreground">Active schools</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
@@ -639,17 +589,17 @@ export default function SchoolsManagementPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-500">{activeSchools}</div>
-                        <p className="text-xs text-muted-foreground">Paying customers</p>
+                        <p className="text-xs text-muted-foreground">Running schools</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">On Trial</CardTitle>
-                        <Clock className="h-4 w-4 text-blue-500" />
+                        <CardTitle className="text-sm font-medium">Suspended</CardTitle>
+                        <PowerOff className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-500">{trialSchools}</div>
-                        <p className="text-xs text-muted-foreground">Trial period</p>
+                        <div className="text-2xl font-bold text-red-500">{suspendedSchools}</div>
+                        <p className="text-xs text-muted-foreground">Paused access</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
@@ -677,30 +627,29 @@ export default function SchoolsManagementPage() {
                                 className="pl-9"
                             />
                         </div>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-[150px]">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="trial">Trial</SelectItem>
-                                <SelectItem value="suspended">Suspended</SelectItem>
-                                <SelectItem value="expired">Expired</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={planFilter} onValueChange={setPlanFilter}>
-                            <SelectTrigger className="w-[150px]">
-                                <SelectValue placeholder="Plan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Plans</SelectItem>
-                                <SelectItem value="basic">Basic</SelectItem>
-                                <SelectItem value="standard">Standard</SelectItem>
-                                <SelectItem value="premium">Premium</SelectItem>
-                                <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                            <Button
+                                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setStatusFilter('all')}
+                            >
+                                All
+                            </Button>
+                            <Button
+                                variant={statusFilter === 'active' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setStatusFilter('active')}
+                            >
+                                Active
+                            </Button>
+                            <Button
+                                variant={statusFilter === 'suspended' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setStatusFilter('suspended')}
+                            >
+                                Suspended
+                            </Button>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -735,25 +684,25 @@ export default function SchoolsManagementPage() {
                                 <TableRow>
                                     <TableHead>School</TableHead>
                                     <TableHead>URL</TableHead>
-                                    <TableHead>Plan</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-center">Students</TableHead>
                                     <TableHead className="text-center">Modules</TableHead>
-                                    <TableHead>Expires</TableHead>
+                                    <TableHead>Created</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {schools.map((school) => (
-                                    <TableRow key={school.id}>
+                                    <TableRow key={school.id} className={!school.is_active ? 'opacity-50' : ''}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                    <Building2 className="h-5 w-5 text-primary" />
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${school.is_active ? 'bg-primary/10' : 'bg-gray-200'}`}>
+                                                    <Building2 className={`h-5 w-5 ${school.is_active ? 'text-primary' : 'text-gray-400'}`} />
                                                 </div>
                                                 <div>
                                                     <p className="font-medium">{school.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{school.city} • {school.principal_name || 'N/A'}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {school.city}{school.principal_name && ` • ${school.principal_name}`}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -770,26 +719,20 @@ export default function SchoolsManagementPage() {
                                                 </Button>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{getPlanBadge(school.subscription_plan)}</TableCell>
-                                        <TableCell>{getStatusBadge(school.subscription_status)}</TableCell>
-                                        <TableCell className="text-center">
-                                            <span className="font-medium">{school.current_students || 0}</span>
-                                            <span className="text-muted-foreground">/{school.max_students === -1 ? '∞' : school.max_students}</span>
-                                        </TableCell>
+                                        <TableCell>{getStatusBadge(school.subscription_status, school.is_active)}</TableCell>
                                         <TableCell className="text-center">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => openModulesDialog(school)}
+                                                disabled={!school.is_active}
                                             >
                                                 <Shield className="h-4 w-4 mr-1" />
                                                 {school.enabled_modules?.length || 0}
                                             </Button>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={school.subscription_expires_at && new Date(school.subscription_expires_at) < new Date() ? 'text-red-500' : ''}>
-                                                {school.subscription_expires_at ? new Date(school.subscription_expires_at).toLocaleDateString() : 'N/A'}
-                                            </span>
+                                            {new Date(school.created_at).toLocaleDateString()}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -806,10 +749,6 @@ export default function SchoolsManagementPage() {
                                                         <ExternalLink className="mr-2 h-4 w-4" />
                                                         Visit Portal
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View Details
-                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => openModulesDialog(school)}>
                                                         <Shield className="mr-2 h-4 w-4" />
                                                         Manage Modules
@@ -819,7 +758,25 @@ export default function SchoolsManagementPage() {
                                                         Edit School
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem 
+                                                    {school.is_active && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => openSuspendDialog(school)}
+                                                            className={school.subscription_status === 'suspended' ? 'text-green-600' : 'text-orange-600'}
+                                                        >
+                                                            {school.subscription_status === 'suspended' ? (
+                                                                <>
+                                                                    <Power className="mr-2 h-4 w-4" />
+                                                                    Activate School
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <PowerOff className="mr-2 h-4 w-4" />
+                                                                    Suspend School
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem
                                                         className="text-red-500"
                                                         onClick={() => openDeleteDialog(school)}
                                                     >
@@ -846,7 +803,7 @@ export default function SchoolsManagementPage() {
                     <DialogHeader>
                         <DialogTitle>Edit School</DialogTitle>
                         <DialogDescription>
-                            Update school information and settings.
+                            Update school information.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 mt-4">
@@ -916,23 +873,6 @@ export default function SchoolsManagementPage() {
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label>Subscription Plan</Label>
-                            <Select
-                                value={formData.subscription_plan}
-                                onValueChange={(v) => setFormData({ ...formData, subscription_plan: v })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="basic">Basic</SelectItem>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                     <div className="flex justify-end gap-3 mt-4">
                         <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
@@ -950,31 +890,35 @@ export default function SchoolsManagementPage() {
 
             {/* Module Management Dialog */}
             <Dialog open={isModulesDialogOpen} onOpenChange={setIsModulesDialogOpen}>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Manage Modules - {selectedSchool?.name}</DialogTitle>
                         <DialogDescription>
-                            Enable or disable modules for this school. Only enabled modules will be accessible.
+                            Select which modules this school can access. Only enabled modules will be visible to the school.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {['core', 'academic', 'finance', 'operations', 'extras'].map((category) => (
                             <div key={category}>
-                                <h4 className="font-medium mb-3 capitalize">{category} Modules</h4>
+                                <h4 className="font-semibold mb-3 capitalize text-lg">{category} Modules</h4>
                                 <div className="grid gap-3 md:grid-cols-2">
                                     {AVAILABLE_MODULES.filter(m => m.category === category).map((module) => (
                                         <div
                                             key={module.name}
-                                            className={`flex items-center justify-between p-3 rounded-lg border ${enabledModules.includes(module.name) ? 'border-primary bg-primary/5' : ''
+                                            className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${enabledModules.includes(module.name)
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                                                 }`}
+                                            onClick={() => toggleModule(module.name)}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${enabledModules.includes(module.name) ? 'bg-primary/10' : 'bg-muted'
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${enabledModules.includes(module.name) ? 'bg-primary/10' : 'bg-muted'
                                                     }`}>
-                                                    <Shield className={`h-4 w-4 ${enabledModules.includes(module.name) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                    <Shield className={`h-5 w-5 ${enabledModules.includes(module.name) ? 'text-primary' : 'text-muted-foreground'
+                                                        }`} />
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-sm">{module.label}</p>
+                                                    <p className="font-medium">{module.label}</p>
                                                     <p className="text-xs text-muted-foreground">{module.description}</p>
                                                 </div>
                                             </div>
@@ -988,9 +932,9 @@ export default function SchoolsManagementPage() {
                             </div>
                         ))}
                     </div>
-                    <div className="flex justify-between items-center pt-4 border-t">
+                    <div className="flex justify-between items-center pt-4 border-t sticky bottom-0 bg-background">
                         <p className="text-sm text-muted-foreground">
-                            {enabledModules.length} modules enabled
+                            <strong>{enabledModules.length}</strong> modules enabled
                         </p>
                         <div className="flex gap-3">
                             <Button variant="outline" onClick={() => setIsModulesDialogOpen(false)}>Cancel</Button>
@@ -1000,29 +944,76 @@ export default function SchoolsManagementPage() {
                                 ) : (
                                     <CheckCircle className="mr-2 h-4 w-4" />
                                 )}
-                                Save Changes
+                                Save Modules
                             </Button>
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            {/* Suspend/Activate Confirmation Dialog */}
+            <AlertDialog open={isSuspendDialogOpen} onOpenChange={setIsSuspendDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {selectedSchool?.subscription_status === 'suspended'
+                                ? 'Activate School?'
+                                : 'Suspend School?'
+                            }
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will deactivate <strong>{selectedSchool?.name}</strong> and suspend their account. 
-                            All users from this school will no longer be able to access the system.
-                            This action can be reversed by reactivating the school later.
+                            {selectedSchool?.subscription_status === 'suspended' ? (
+                                <>
+                                    This will <strong>activate</strong> <strong>{selectedSchool?.name}</strong>.
+                                    Users will be able to login and access the system again.
+                                </>
+                            ) : (
+                                <>
+                                    This will <strong>suspend</strong> <strong>{selectedSchool?.name}</strong>.
+                                    All users from this school will not be able to login until you activate them again.
+                                    This is useful when payment is due.
+                                </>
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
+                            onClick={handleToggleSchoolStatus}
+                            className={selectedSchool?.subscription_status === 'suspended'
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-orange-600 hover:bg-orange-700'
+                            }
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : selectedSchool?.subscription_status === 'suspended' ? (
+                                <><Power className="mr-2 h-4 w-4" /> Activate</>
+                            ) : (
+                                <><PowerOff className="mr-2 h-4 w-4" /> Suspend</>
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-600">Delete School?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently deactivate <strong>{selectedSchool?.name}</strong>.
+                            All data will be preserved but the school will no longer be accessible.
+                            This action cannot be easily reversed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                             onClick={handleDeleteSchool}
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-red-600 hover:bg-red-700"
                             disabled={isSaving}
                         >
                             {isSaving ? (
@@ -1030,7 +1021,7 @@ export default function SchoolsManagementPage() {
                             ) : (
                                 <Trash2 className="mr-2 h-4 w-4" />
                             )}
-                            Deactivate School
+                            Delete School
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
