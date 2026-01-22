@@ -54,6 +54,16 @@ export default function IssueBookPage() {
     const [selectedMember, setSelectedMember] = useState<SearchResult | null>(null)
     const [selectedBook, setSelectedBook] = useState<typeof availableBooks[0] | null>(null)
     const [issueSuccess, setIssueSuccess] = useState(false)
+    const [dueDate] = useState(() => {
+        const date = new Date()
+        date.setDate(date.getDate() + 14)
+        return date.toLocaleDateString()
+    })
+    const [dueDateISO] = useState(() => {
+        const date = new Date()
+        date.setDate(date.getDate() + 14)
+        return date.toISOString().split('T')[0]
+    })
 
     const handleIssue = () => {
         if (selectedMember && selectedBook) {
@@ -87,7 +97,7 @@ export default function IssueBookPage() {
                             <div>
                                 <p className="font-medium text-green-500">Book Issued Successfully!</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Due date: {new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                    Due date: {dueDate}
                                 </p>
                             </div>
                         </div>
@@ -254,7 +264,7 @@ export default function IssueBookPage() {
                             <Label>Due Date</Label>
                             <Input
                                 type="date"
-                                defaultValue={new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                                defaultValue={dueDateISO}
                             />
                         </div>
                         <div className="space-y-2">

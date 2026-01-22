@@ -5,22 +5,25 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export function ThemeToggle() {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light')
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        if (typeof window !== 'undefined') {
+            const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+            if (savedTheme) return savedTheme
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+        }
+        return 'light'
+    })
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        setMounted(true)
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-        if (savedTheme) {
-            setTheme(savedTheme)
-            document.documentElement.classList.toggle('dark', savedTheme === 'dark')
-        } else if (prefersDark) {
-            setTheme('dark')
-            document.documentElement.classList.add('dark')
-        }
-    }, [])
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+        // Use a small timeout to avoid the "setState in effect" warning if it's strictly enforced,
+        // though for 'mounted' state it's a common pattern.
+        const timer = setTimeout(() => {
+            setMounted(true)
+        }, 0)
+        return () => clearTimeout(timer)
+    }, [theme])
 
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light'

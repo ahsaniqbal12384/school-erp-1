@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,11 +101,7 @@ export default function TransportManagerPage() {
         dropoff_time: '14:00',
     })
 
-    useEffect(() => {
-        fetchData()
-    }, [])
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true)
         try {
             const [vehiclesRes, routesRes, transportRes, studentsRes] = await Promise.all([
@@ -118,17 +114,21 @@ export default function TransportManagerPage() {
             if (vehiclesRes.error) throw vehiclesRes.error
             if (routesRes.error) throw routesRes.error
 
-            setVehicles(vehiclesRes.data || [])
-            setRoutes(routesRes.data || [])
-            setStudentTransport(transportRes.data || [])
-            setStudents(studentsRes.data || [])
+            setVehicles((vehiclesRes.data || []) as Vehicle[])
+            setRoutes((routesRes.data || []) as Route[])
+            setStudentTransport((transportRes.data || []) as StudentTransport[])
+            setStudents((studentsRes.data || []) as { id: string; admission_no: string }[])
         } catch (err) {
             console.error('Error fetching data:', err)
             toast.error('Failed to load transport data')
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [supabase])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
 
     const handleAddVehicle = async () => {
         if (!newVehicle.vehicle_no || !newVehicle.driver_name || !newVehicle.driver_phone) {
@@ -141,7 +141,7 @@ export default function TransportManagerPage() {
                 school_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
                 ...newVehicle,
                 is_active: true,
-            } as any)
+            })
 
             if (error) throw error
 
@@ -169,7 +169,7 @@ export default function TransportManagerPage() {
                 pickup_time: assignData.pickup_time,
                 dropoff_time: assignData.dropoff_time,
                 is_active: true,
-            } as any)
+            })
 
             if (error) throw error
 
