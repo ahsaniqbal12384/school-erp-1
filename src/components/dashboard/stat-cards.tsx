@@ -34,7 +34,7 @@ export function StatCard({
     const displayChange = change || trend
     const hasPercentage = displayChange?.type != null
     return (
-        <Card className={cn('stat-card', className)}>
+        <Card className={cn('stat-card card-shine group', className)}>
             <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                     <div className="space-y-2">
@@ -69,7 +69,7 @@ export function StatCard({
                     </div>
                     <div
                         className={cn(
-                            'flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10',
+                            'flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
                             iconColor === 'text-emerald-600' && 'bg-emerald-500/10',
                             iconColor === 'text-blue-600' && 'bg-blue-500/10',
                             iconColor === 'text-amber-600' && 'bg-amber-500/10',
@@ -77,7 +77,7 @@ export function StatCard({
                             iconColor === 'text-red-600' && 'bg-red-500/10'
                         )}
                     >
-                        <Icon className={cn('h-6 w-6', iconColor)} />
+                        <Icon className={cn('h-6 w-6 transition-transform duration-300', iconColor)} />
                     </div>
                 </div>
             </CardContent>
@@ -123,7 +123,7 @@ export function CurrencyStatCard({
     const hasPercentage = displayChange?.type != null
 
     return (
-        <Card className={cn('stat-card', className)}>
+        <Card className={cn('stat-card card-shine group', className)}>
             <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                     <div className="space-y-2">
@@ -160,14 +160,14 @@ export function CurrencyStatCard({
                     </div>
                     <div
                         className={cn(
-                            'flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10',
+                            'flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
                             iconColor === 'text-emerald-600' && 'bg-emerald-500/10',
                             iconColor === 'text-blue-600' && 'bg-blue-500/10',
                             iconColor === 'text-amber-600' && 'bg-amber-500/10',
                             iconColor === 'text-purple-600' && 'bg-purple-500/10'
                         )}
                     >
-                        <Icon className={cn('h-6 w-6', iconColor)} />
+                        <Icon className={cn('h-6 w-6 transition-transform duration-300', iconColor)} />
                     </div>
                 </div>
             </CardContent>

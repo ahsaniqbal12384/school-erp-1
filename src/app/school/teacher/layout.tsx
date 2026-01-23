@@ -1,22 +1,56 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { useAuth } from '@/lib/auth/context'
+import { getUserFullName } from '@/types/tenant'
+import { Loader2 } from 'lucide-react'
 
 export default function TeacherLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const mockUser = {
-        name: 'Ahmad Khan',
-        email: 'ahmad.khan@school.pk',
-        avatar: undefined,
+    const router = useRouter()
+    const { user, school, isLoading, isAuthenticated } = useAuth()
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/login')
+        } else if (!isLoading && user && user.role !== 'teacher') {
+            router.push('/login')
+        }
+    }, [isLoading, isAuthenticated, user, router])
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!isAuthenticated || !user || user.role !== 'teacher') {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    const currentUser = {
+        name: getUserFullName(user),
+        email: user.email,
+        avatar: user.avatar_url || undefined,
     }
 
     return (
         <div className="flex h-screen overflow-hidden bg-background">
             <Sidebar role="teacher" />
             <div className="flex flex-1 flex-col overflow-hidden">
-                <Header role="teacher" user={mockUser} />
+                <Header role="teacher" user={currentUser} schoolName={school?.name} />
                 <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20">
                     {children}
                 </main>

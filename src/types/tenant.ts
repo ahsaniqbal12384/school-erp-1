@@ -31,6 +31,7 @@ export interface LoginCredentials {
     email: string
     password: string
     schoolSlug?: string
+    selectedRole?: string  // The role user selected on login page
 }
 
 export interface School {
@@ -85,6 +86,7 @@ export interface User {
     email: string
     first_name: string | null
     last_name: string | null
+    full_name?: string
     role: UserRole
     phone: string | null
     school_id: string | null
@@ -92,6 +94,13 @@ export interface User {
     is_active: boolean
     last_login: string | null
     created_at: string
+}
+
+// Helper to get full name from user
+export function getUserFullName(user: User): string {
+    if (user.full_name) return user.full_name
+    const parts = [user.first_name, user.last_name].filter(Boolean)
+    return parts.length > 0 ? parts.join(' ') : user.email
 }
 
 export interface TenantContext {

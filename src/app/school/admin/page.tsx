@@ -82,8 +82,8 @@ const pendingItems = [
 
 export default function SchoolAdminDashboard() {
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-6 page-enter">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-slide-in-left">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground">
@@ -107,12 +107,12 @@ export default function SchoolAdminDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-stagger">
                 {stats.map((stat, index) => (
-                    <Card key={index} className="card-hover">
+                    <Card key={index} className="card-shine group">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${stat.bgColor}`}>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${stat.bgColor} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
                                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
                             </div>
                         </CardHeader>

@@ -71,8 +71,8 @@ const recentTickets = [
 
 export default function SuperAdminDashboard() {
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-6 page-enter">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-slide-in-left">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h1>
                     <p className="text-muted-foreground">
@@ -96,12 +96,12 @@ export default function SuperAdminDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-stagger">
                 {stats.map((stat, index) => (
-                    <Card key={index} className="card-hover">
+                    <Card key={index} className="card-shine group">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                            <stat.icon className="h-4 w-4 text-muted-foreground" />
+                            <stat.icon className="h-4 w-4 text-muted-foreground transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stat.value}</div>
@@ -121,9 +121,9 @@ export default function SuperAdminDashboard() {
                 ))}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 animate-stagger">
                 {/* Recent Schools */}
-                <Card>
+                <Card className="animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
@@ -141,9 +141,9 @@ export default function SuperAdminDashboard() {
                     <CardContent>
                         <div className="space-y-4">
                             {recentSchools.map((school, index) => (
-                                <div key={index} className="flex items-center justify-between">
+                                <div key={index} className="flex items-center justify-between group hover:bg-muted/50 -mx-2 px-2 py-1 rounded-lg transition-all duration-200">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110">
                                             <Building2 className="h-5 w-5 text-primary" />
                                         </div>
                                         <div>

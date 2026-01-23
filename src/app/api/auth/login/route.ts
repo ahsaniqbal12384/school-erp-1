@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
         const supabase = createServerClient()
         const body = await request.json()
 
-        const { email, password, schoolSlug } = body
+        const { email, password, schoolSlug, selectedRole } = body
 
         if (!email || !password) {
             return NextResponse.json(
@@ -68,8 +68,39 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Validate selected role matches user's actual role
+        if (selectedRole && selectedRole !== user.role) {
+            // Map roles for friendly error messages
+            const roleLabels: Record<string, string> = {
+                'super_admin': 'Super Admin',
+                'school_admin': 'Admin',
+                'teacher': 'Teacher',
+                'parent': 'Parent',
+                'student': 'Student',
+                'accountant': 'Accountant',
+                'librarian': 'Librarian',
+                'transport_manager': 'Transport Manager'
+            }
+
+            const selectedLabel = roleLabels[selectedRole] || selectedRole
+            const actualLabel = roleLabels[user.role] || user.role
+
+            return NextResponse.json(
+                { error: `You are registered as ${actualLabel}, not ${selectedLabel}. Please select the correct role.` },
+                { status: 403 }
+            )
+        }
+
         // If schoolSlug provided, verify user belongs to that school
         if (schoolSlug && user.school_id) {
+            // Prevent super_admin from logging in via school portal
+            if (user.role === 'super_admin') {
+                return NextResponse.json(
+                    { error: 'Super Admin must login from the main admin portal, not school subdomains.' },
+                    { status: 403 }
+                )
+            }
+
             const { data: school } = await supabase
                 .from('schools')
                 .select('slug, is_active, subscription_status')
@@ -92,17 +123,32 @@ export async function POST(request: NextRequest) {
 
             if (!school.is_active) {
                 return NextResponse.json(
-                    { error: 'This school has been deactivated' },
+                    { error: 'This school has been deactivated. Contact your administrator.' },
                     { status: 403 }
                 )
             }
 
-            if (school.subscription_status === 'suspended' || school.subscription_status === 'expired') {
+            if (school.subscription_status === 'suspended') {
+                return NextResponse.json(
+                    { error: 'This school has been suspended. Please contact the platform administrator.' },
+                    { status: 403 }
+                )
+            }
+
+            if (school.subscription_status === 'expired' || school.subscription_status === 'cancelled') {
                 return NextResponse.json(
                     { error: 'School subscription has expired. Contact administrator.' },
                     { status: 403 }
                 )
             }
+        }
+
+        // If user is super_admin but logging in with schoolSlug, reject
+        if (schoolSlug && user.role === 'super_admin') {
+            return NextResponse.json(
+                { error: 'Super Admin cannot login from school portals. Use the main admin portal.' },
+                { status: 403 }
+            )
         }
 
         // Generate session token

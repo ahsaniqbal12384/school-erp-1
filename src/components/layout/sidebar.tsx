@@ -191,42 +191,44 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed?: bool
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={cn(
-                        'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                        'group w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                         isActive
                             ? 'sidebar-active text-primary'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     )}
                 >
-                    <item.icon className="h-5 w-5 shrink-0" />
+                    <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                     {!collapsed && (
                         <>
                             <span className="flex-1 text-left">{item.title}</span>
                             <ChevronDown className={cn(
-                                'h-4 w-4 transition-transform duration-200',
+                                'h-4 w-4 transition-transform duration-300',
                                 isExpanded && 'rotate-180'
                             )} />
                         </>
                     )}
                 </button>
-                {!collapsed && isExpanded && (
-                    <div className="ml-4 space-y-1 border-l-2 border-border pl-4">
-                        {item.children!.map((child) => (
-                            <Link
-                                key={child.href}
-                                href={child.href}
-                                className={cn(
-                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200',
-                                    pathname === child.href
-                                        ? 'bg-primary/10 text-primary font-medium'
-                                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                                )}
-                            >
-                                <child.icon className="h-4 w-4" />
-                                <span>{child.title}</span>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                <div className={cn(
+                    'ml-4 space-y-1 border-l-2 border-border pl-4 overflow-hidden transition-all duration-300',
+                    isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                )}>
+                    {item.children!.map((child, index) => (
+                        <Link
+                            key={child.href}
+                            href={child.href}
+                            style={{ animationDelay: `${index * 50}ms` }}
+                            className={cn(
+                                'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200',
+                                pathname === child.href
+                                    ? 'bg-primary/10 text-primary font-medium'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1'
+                            )}
+                        >
+                            <child.icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                            <span>{child.title}</span>
+                        </Link>
+                    ))}
+                </div>
             </div>
         )
     }
@@ -235,18 +237,18 @@ function NavItemComponent({ item, collapsed }: { item: NavItem; collapsed?: bool
         <Link
             href={item.href}
             className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                 isActive
                     ? 'sidebar-active text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1'
             )}
         >
-            <item.icon className="h-5 w-5 shrink-0" />
+            <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
             {!collapsed && (
                 <>
                     <span className="flex-1">{item.title}</span>
                     {item.badge && (
-                        <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                        <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground animate-pulse">
                             {item.badge}
                         </span>
                     )}
