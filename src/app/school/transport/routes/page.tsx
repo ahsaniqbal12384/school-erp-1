@@ -37,7 +37,8 @@ import {
     Clock,
     Edit,
     MoreHorizontal,
-    Bus,
+    Eye,
+    Loader2,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -45,6 +46,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { toast } from 'sonner'
 
 interface TransportRoute {
     id: string
@@ -67,13 +69,27 @@ const sampleRoutes: TransportRoute[] = [
     { id: '3', routeNo: 'R-003', name: 'Model Town Route', bus: 'Bus-03', driver: 'Hassan Raza', startPoint: 'Model Town Link Road', endPoint: 'School', stops: 7, students: 35, morningTime: '7:00 AM', afternoonTime: '2:30 PM', status: 'active' },
     { id: '4', routeNo: 'R-004', name: 'Johar Town Route', bus: 'Bus-04', driver: 'Farhan Ahmed', startPoint: 'Johar Town Block D', endPoint: 'School', stops: 9, students: 45, morningTime: '6:45 AM', afternoonTime: '2:30 PM', status: 'active' },
     { id: '5', routeNo: 'R-005', name: 'Cantt Area Route', bus: 'Bus-05', driver: 'Imran Ali', startPoint: 'Cantt Railway Station', endPoint: 'School', stops: 5, students: 30, morningTime: '7:30 AM', afternoonTime: '2:30 PM', status: 'active' },
-    { id: '6', routeNo: 'R-006', name: 'Garden Town Route', bus: 'Bus-06', driver: 'Bilal Shah', startPoint: 'Garden Town Main Boulevard', endPoint: 'School', stops: 6, students: 32, morningTime: '7:15 AM', afternoonTime: '2:30 PM', status: 'active' },
 ]
 
+const emptyFormData = {
+    name: '',
+    bus: '',
+    driver: '',
+    startPoint: '',
+    endPoint: 'School',
+    morningTime: '',
+}
+
 export default function TransportRoutesPage() {
-    const [routes] = useState<TransportRoute[]>(sampleRoutes)
+    const [routes, setRoutes] = useState<TransportRoute[]>(sampleRoutes)
     const [searchQuery, setSearchQuery] = useState('')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+    const [isStudentsDialogOpen, setIsStudentsDialogOpen] = useState(false)
+    const [selectedRoute, setSelectedRoute] = useState<TransportRoute | null>(null)
+    const [formData, setFormData] = useState(emptyFormData)
+    const [isLoading, setIsLoading] = useState(false)
 
     const filteredRoutes = routes.filter((route) =>
         route.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,6 +100,105 @@ export default function TransportRoutesPage() {
     const totalRoutes = routes.length
     const totalStudents = routes.reduce((acc, r) => acc + r.students, 0)
     const totalStops = routes.reduce((acc, r) => acc + r.stops, 0)
+
+    const generateRouteNo = () => {
+        const nextNum = routes.length + 1
+        return `R-${String(nextNum).padStart(3, '0')}`
+    }
+
+    const handleAddRoute = async () => {
+        if (!formData.name || !formData.bus || !formData.driver || !formData.startPoint || !formData.morningTime) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            const newRoute: TransportRoute = {
+                id: String(routes.length + 1),
+                routeNo: generateRouteNo(),
+                name: formData.name,
+                bus: formData.bus,
+                driver: formData.driver,
+                startPoint: formData.startPoint,
+                endPoint: formData.endPoint,
+                stops: 0,
+                students: 0,
+                morningTime: formData.morningTime,
+                afternoonTime: '2:30 PM',
+                status: 'active',
+            }
+
+            setRoutes([...routes, newRoute])
+            setFormData(emptyFormData)
+            setIsAddDialogOpen(false)
+            toast.success('Route added successfully', {
+                description: `${newRoute.name} has been created`
+            })
+        } catch {
+            toast.error('Failed to add route')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleEditRoute = async () => {
+        if (!selectedRoute || !formData.name) {
+            toast.error('Please fill in required fields')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            setRoutes(routes.map(route =>
+                route.id === selectedRoute.id
+                    ? {
+                        ...route,
+                        name: formData.name,
+                        bus: formData.bus || route.bus,
+                        driver: formData.driver || route.driver,
+                        startPoint: formData.startPoint || route.startPoint,
+                        endPoint: formData.endPoint,
+                        morningTime: formData.morningTime || route.morningTime,
+                    }
+                    : route
+            ))
+            setIsEditDialogOpen(false)
+            setSelectedRoute(null)
+            toast.success('Route updated successfully')
+        } catch {
+            toast.error('Failed to update route')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const openEditDialog = (route: TransportRoute) => {
+        setSelectedRoute(route)
+        setFormData({
+            name: route.name,
+            bus: route.bus,
+            driver: route.driver,
+            startPoint: route.startPoint,
+            endPoint: route.endPoint,
+            morningTime: route.morningTime,
+        })
+        setIsEditDialogOpen(true)
+    }
+
+    const openViewDialog = (route: TransportRoute) => {
+        setSelectedRoute(route)
+        setIsViewDialogOpen(true)
+    }
+
+    const openStudentsDialog = (route: TransportRoute) => {
+        setSelectedRoute(route)
+        setIsStudentsDialogOpen(true)
+    }
 
     return (
         <div className="space-y-6">
@@ -108,54 +223,91 @@ export default function TransportRoutesPage() {
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Route Name</Label>
-                                    <Input placeholder="e.g., DHA Phase 5 Route" />
+                                    <Label>Route Name *</Label>
+                                    <Input
+                                        placeholder="e.g., DHA Phase 5 Route"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Assign Bus</Label>
-                                    <Select>
+                                    <Label>Assign Bus *</Label>
+                                    <Select
+                                        value={formData.bus}
+                                        onValueChange={(value) => setFormData({ ...formData, bus: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select bus" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="bus-07">Bus-07 (Available)</SelectItem>
-                                            <SelectItem value="bus-08">Bus-08 (Available)</SelectItem>
+                                            <SelectItem value="Bus-07">Bus-07 (Available)</SelectItem>
+                                            <SelectItem value="Bus-08">Bus-08 (Available)</SelectItem>
+                                            <SelectItem value="Bus-09">Bus-09 (Available)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Starting Point</Label>
-                                    <Input placeholder="First pickup location" />
+                                    <Label>Starting Point *</Label>
+                                    <Input
+                                        placeholder="First pickup location"
+                                        value={formData.startPoint}
+                                        onChange={(e) => setFormData({ ...formData, startPoint: e.target.value })}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>End Point</Label>
-                                    <Input placeholder="School" defaultValue="School" />
+                                    <Input
+                                        value={formData.endPoint}
+                                        onChange={(e) => setFormData({ ...formData, endPoint: e.target.value })}
+                                    />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Assign Driver</Label>
-                                    <Select>
+                                    <Label>Assign Driver *</Label>
+                                    <Select
+                                        value={formData.driver}
+                                        onValueChange={(value) => setFormData({ ...formData, driver: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select driver" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="d1">Muhammad Aslam</SelectItem>
-                                            <SelectItem value="d2">Ahmad Khan</SelectItem>
-                                            <SelectItem value="d3">Hassan Raza</SelectItem>
+                                            <SelectItem value="Muhammad Aslam">Muhammad Aslam</SelectItem>
+                                            <SelectItem value="Ahmad Khan">Ahmad Khan</SelectItem>
+                                            <SelectItem value="Hassan Raza">Hassan Raza</SelectItem>
+                                            <SelectItem value="Farhan Ahmed">Farhan Ahmed</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Pickup Time</Label>
-                                    <Input type="time" />
+                                    <Label>Pickup Time *</Label>
+                                    <Input
+                                        type="time"
+                                        value={formData.morningTime}
+                                        onChange={(e) => setFormData({ ...formData, morningTime: e.target.value })}
+                                    />
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 pt-4">
-                                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                                <Button className="gradient-primary" onClick={() => setIsAddDialogOpen(false)}>Add Route</Button>
+                                <Button variant="outline" onClick={() => {
+                                    setIsAddDialogOpen(false)
+                                    setFormData(emptyFormData)
+                                }}>
+                                    Cancel
+                                </Button>
+                                <Button className="gradient-primary" onClick={handleAddRoute} disabled={isLoading}>
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        'Add Route'
+                                    )}
+                                </Button>
                             </div>
                         </div>
                     </DialogContent>
@@ -223,9 +375,10 @@ export default function TransportRoutesPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Route</TableHead>
-                                <TableHead>Bus & Driver</TableHead>
-                                <TableHead>Start Point</TableHead>
+                                <TableHead>Route No</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Bus / Driver</TableHead>
+                                <TableHead>Starting Point</TableHead>
                                 <TableHead className="text-center">Stops</TableHead>
                                 <TableHead className="text-center">Students</TableHead>
                                 <TableHead>Timings</TableHead>
@@ -236,24 +389,12 @@ export default function TransportRoutesPage() {
                         <TableBody>
                             {filteredRoutes.map((route) => (
                                 <TableRow key={route.id}>
+                                    <TableCell className="font-medium text-primary">{route.routeNo}</TableCell>
+                                    <TableCell className="font-medium">{route.name}</TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                <Route className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium">{route.name}</p>
-                                                <p className="text-xs text-muted-foreground">{route.routeNo}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Bus className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                                <p className="font-medium">{route.bus}</p>
-                                                <p className="text-xs text-muted-foreground">{route.driver}</p>
-                                            </div>
+                                        <div className="text-sm">
+                                            <p>{route.bus}</p>
+                                            <p className="text-muted-foreground">{route.driver}</p>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -287,15 +428,15 @@ export default function TransportRoutesPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>
-                                                    <MapPin className="mr-2 h-4 w-4" />
+                                                <DropdownMenuItem onClick={() => openViewDialog(route)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
                                                     View Stops
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openStudentsDialog(route)}>
                                                     <Users className="mr-2 h-4 w-4" />
                                                     View Students
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openEditDialog(route)}>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit Route
                                                 </DropdownMenuItem>
@@ -308,6 +449,196 @@ export default function TransportRoutesPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Route</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Route Name *</Label>
+                                <Input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Assign Bus</Label>
+                                <Select
+                                    value={formData.bus}
+                                    onValueChange={(value) => setFormData({ ...formData, bus: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Bus-01">Bus-01</SelectItem>
+                                        <SelectItem value="Bus-02">Bus-02</SelectItem>
+                                        <SelectItem value="Bus-03">Bus-03</SelectItem>
+                                        <SelectItem value="Bus-04">Bus-04</SelectItem>
+                                        <SelectItem value="Bus-05">Bus-05</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Starting Point</Label>
+                                <Input
+                                    value={formData.startPoint}
+                                    onChange={(e) => setFormData({ ...formData, startPoint: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>End Point</Label>
+                                <Input
+                                    value={formData.endPoint}
+                                    onChange={(e) => setFormData({ ...formData, endPoint: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Assign Driver</Label>
+                                <Select
+                                    value={formData.driver}
+                                    onValueChange={(value) => setFormData({ ...formData, driver: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Muhammad Aslam">Muhammad Aslam</SelectItem>
+                                        <SelectItem value="Ahmad Khan">Ahmad Khan</SelectItem>
+                                        <SelectItem value="Hassan Raza">Hassan Raza</SelectItem>
+                                        <SelectItem value="Farhan Ahmed">Farhan Ahmed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Pickup Time</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.morningTime}
+                                    onChange={(e) => setFormData({ ...formData, morningTime: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 pt-4">
+                            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button className="gradient-primary" onClick={handleEditRoute} disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save Changes'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* View Stops Dialog */}
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Route Stops - {selectedRoute?.name}</DialogTitle>
+                    </DialogHeader>
+                    {selectedRoute && (
+                        <div className="space-y-4 py-4">
+                            <div className="p-4 bg-muted rounded-lg">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Total Stops</p>
+                                        <p className="text-2xl font-bold">{selectedRoute.stops}</p>
+                                    </div>
+                                    <MapPin className="h-8 w-8 text-primary" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                {Array.from({ length: selectedRoute.stops }).map((_, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
+                                            {i + 1}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Stop {i + 1}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {i === 0 ? selectedRoute.startPoint : i === selectedRoute.stops - 1 ? selectedRoute.endPoint : `Pickup Point ${i}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-end">
+                                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                                    Close
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* View Students Dialog */}
+            <Dialog open={isStudentsDialogOpen} onOpenChange={setIsStudentsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Students - {selectedRoute?.name}</DialogTitle>
+                    </DialogHeader>
+                    {selectedRoute && (
+                        <div className="space-y-4 py-4">
+                            <div className="p-4 bg-muted rounded-lg">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Total Students</p>
+                                        <p className="text-2xl font-bold">{selectedRoute.students}</p>
+                                    </div>
+                                    <Users className="h-8 w-8 text-blue-500" />
+                                </div>
+                            </div>
+                            <div className="border rounded-lg overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Class</TableHead>
+                                            <TableHead>Stop</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {Array.from({ length: Math.min(5, selectedRoute.students) }).map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell className="font-medium">Student {i + 1}</TableCell>
+                                                <TableCell>Class {8 + Math.floor(i / 2)}</TableCell>
+                                                <TableCell>Stop {(i % selectedRoute.stops) + 1}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            {selectedRoute.students > 5 && (
+                                <p className="text-sm text-muted-foreground text-center">
+                                    And {selectedRoute.students - 5} more students...
+                                </p>
+                            )}
+                            <div className="flex justify-end">
+                                <Button variant="outline" onClick={() => setIsStudentsDialogOpen(false)}>
+                                    Close
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

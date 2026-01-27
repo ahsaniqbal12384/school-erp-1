@@ -19,6 +19,7 @@ import {
     CheckCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import { TodoWidget } from '@/components/dashboard/todo-widget'
 
 const children = [
     {
@@ -156,7 +157,7 @@ export default function ParentPortalDashboard() {
                 ))}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Today's Schedule */}
                 <Card>
                     <CardHeader>
@@ -187,6 +188,9 @@ export default function ParentPortalDashboard() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Todo Widget */}
+                <TodoWidget compact={false} maxItems={8} />
 
                 {/* Recent Updates */}
                 <Card>

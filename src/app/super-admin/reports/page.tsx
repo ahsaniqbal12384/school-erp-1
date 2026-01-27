@@ -21,6 +21,15 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
+import {
     FileText,
     Search,
     Download,
@@ -32,6 +41,7 @@ import {
     BarChart3,
     PieChart,
     Filter,
+    Loader2,
 } from 'lucide-react'
 
 interface Report {
@@ -98,12 +108,101 @@ export default function ReportsPage() {
     const [reports] = useState<Report[]>(sampleReports)
     const [searchQuery, setSearchQuery] = useState('')
     const [typeFilter, setTypeFilter] = useState<string>('all')
+    const [generatingReport, setGeneratingReport] = useState<string | null>(null)
+    const [customReportOpen, setCustomReportOpen] = useState(false)
+    const [customReportType, setCustomReportType] = useState('financial')
+    const [customReportFormat, setCustomReportFormat] = useState('csv')
 
     const filteredReports = reports.filter((report) => {
         const matchesSearch = report.name.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesType = typeFilter === 'all' || report.type === typeFilter
         return matchesSearch && matchesType
     })
+
+    const handleGenerateReport = async (reportId: string, reportName: string) => {
+        setGeneratingReport(reportId)
+        try {
+            const response = await fetch('/api/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportType: reportId, format: 'json' })
+            })
+            if (response.ok) {
+                toast.success(`${reportName} generated successfully`)
+            } else {
+                toast.error('Failed to generate report')
+            }
+        } catch {
+            toast.error('Error generating report')
+        } finally {
+            setGeneratingReport(null)
+        }
+    }
+
+    const handleDownloadReport = async (reportId: string, reportName: string) => {
+        toast.info(`Downloading ${reportName}...`)
+        try {
+            const response = await fetch('/api/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportType: reportId, format: 'csv' })
+            })
+            if (response.ok) {
+                const data = await response.json()
+                // Convert to CSV and download
+                const csv = convertToCSV(data.data || [])
+                downloadFile(csv, `${reportName.toLowerCase().replace(/\s+/g, '-')}.csv`, 'text/csv')
+                toast.success('Report downloaded successfully')
+            } else {
+                toast.error('Failed to download report')
+            }
+        } catch {
+            toast.error('Error downloading report')
+        }
+    }
+
+    const handleGenerateCustomReport = async () => {
+        setGeneratingReport('custom')
+        try {
+            const response = await fetch('/api/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportType: customReportType, format: customReportFormat })
+            })
+            if (response.ok) {
+                const data = await response.json()
+                if (customReportFormat === 'csv') {
+                    const csv = convertToCSV(data.data || [])
+                    downloadFile(csv, `custom-report-${customReportType}.csv`, 'text/csv')
+                }
+                toast.success('Custom report generated successfully')
+                setCustomReportOpen(false)
+            } else {
+                toast.error('Failed to generate custom report')
+            }
+        } catch {
+            toast.error('Error generating custom report')
+        } finally {
+            setGeneratingReport(null)
+        }
+    }
+
+    const convertToCSV = (data: Record<string, unknown>[]) => {
+        if (!data.length) return ''
+        const headers = Object.keys(data[0])
+        const rows = data.map(row => headers.map(h => JSON.stringify(row[h] ?? '')).join(','))
+        return [headers.join(','), ...rows].join('\n')
+    }
+
+    const downloadFile = (content: string, filename: string, type: string) => {
+        const blob = new Blob([content], { type })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+    }
 
     const getTypeBadge = (type: Report['type']) => {
         switch (type) {
@@ -140,10 +239,57 @@ export default function ReportsPage() {
                         Generate and download platform-wide reports
                     </p>
                 </div>
-                <Button className="gradient-primary">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Generate Custom Report
-                </Button>
+                <Dialog open={customReportOpen} onOpenChange={setCustomReportOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="gradient-primary">
+                            <FileText className="mr-2 h-4 w-4" />
+                            Generate Custom Report
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Generate Custom Report</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                            <div className="space-y-2">
+                                <Label>Report Type</Label>
+                                <Select value={customReportType} onValueChange={setCustomReportType}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="schools">Schools Overview</SelectItem>
+                                        <SelectItem value="subscriptions">Subscriptions</SelectItem>
+                                        <SelectItem value="users">User Activity</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Format</Label>
+                                <Select value={customReportFormat} onValueChange={setCustomReportFormat}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="csv">CSV</SelectItem>
+                                        <SelectItem value="json">JSON</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button 
+                                className="w-full gradient-primary" 
+                                onClick={handleGenerateCustomReport}
+                                disabled={generatingReport === 'custom'}
+                            >
+                                {generatingReport === 'custom' ? (
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                                ) : (
+                                    <><FileText className="mr-2 h-4 w-4" /> Generate Report</>
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* Quick Stats */}
@@ -261,10 +407,23 @@ export default function ReportsPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="outline" size="sm">
-                                                Generate
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => handleGenerateReport(report.id, report.name)}
+                                                disabled={generatingReport === report.id}
+                                            >
+                                                {generatingReport === report.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    'Generate'
+                                                )}
                                             </Button>
-                                            <Button variant="ghost" size="icon">
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon"
+                                                onClick={() => handleDownloadReport(report.id, report.name)}
+                                            >
                                                 <Download className="h-4 w-4" />
                                             </Button>
                                         </div>

@@ -20,6 +20,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -43,6 +53,7 @@ import {
     MessageSquare,
     Mail,
     Smartphone,
+    Loader2,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -50,6 +61,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { toast } from 'sonner'
 
 interface Broadcast {
     id: string
@@ -121,11 +133,25 @@ const sampleBroadcasts: Broadcast[] = [
     },
 ]
 
+const emptyFormData = {
+    title: '',
+    message: '',
+    audience: '',
+    channel: '',
+    scheduleDate: '',
+}
+
 export default function BroadcastsPage() {
-    const [broadcasts] = useState<Broadcast[]>(sampleBroadcasts)
+    const [broadcasts, setBroadcasts] = useState<Broadcast[]>(sampleBroadcasts)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [selectedBroadcast, setSelectedBroadcast] = useState<Broadcast | null>(null)
+    const [formData, setFormData] = useState(emptyFormData)
+    const [isLoading, setIsLoading] = useState(false)
 
     const filteredBroadcasts = broadcasts.filter((broadcast) => {
         const matchesSearch =
@@ -169,6 +195,186 @@ export default function BroadcastsPage() {
         }
     }
 
+    const getRecipientCount = (audience: string): number => {
+        const counts: Record<string, number> = {
+            'all-parents': 1250,
+            'all-students': 1150,
+            'all-staff': 85,
+            'class-specific': 40,
+            'pending-fees': 320,
+        }
+        return counts[audience] || 100
+    }
+
+    const handleSaveAsDraft = async () => {
+        if (!formData.title || !formData.message) {
+            toast.error('Please provide title and message')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            const newBroadcast: Broadcast = {
+                id: String(broadcasts.length + 1),
+                title: formData.title,
+                message: formData.message,
+                audience: formData.audience || 'All Parents',
+                channel: (formData.channel as Broadcast['channel']) || 'both',
+                sentDate: '',
+                recipients: getRecipientCount(formData.audience),
+                delivered: 0,
+                status: 'draft',
+            }
+
+            setBroadcasts([newBroadcast, ...broadcasts])
+            setFormData(emptyFormData)
+            setIsAddDialogOpen(false)
+            toast.success('Draft saved successfully')
+        } catch {
+            toast.error('Failed to save draft')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleSendNow = async () => {
+        if (!formData.title || !formData.message || !formData.audience || !formData.channel) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+
+            const recipients = getRecipientCount(formData.audience)
+            const delivered = Math.floor(recipients * (0.95 + Math.random() * 0.05))
+
+            const newBroadcast: Broadcast = {
+                id: String(broadcasts.length + 1),
+                title: formData.title,
+                message: formData.message,
+                audience: formData.audience === 'all-parents' ? 'All Parents' : formData.audience,
+                channel: formData.channel as Broadcast['channel'],
+                sentDate: new Date().toISOString().split('T')[0],
+                recipients,
+                delivered,
+                status: 'sent',
+            }
+
+            setBroadcasts([newBroadcast, ...broadcasts])
+            setFormData(emptyFormData)
+            setIsAddDialogOpen(false)
+            toast.success('Broadcast sent successfully', {
+                description: `Sent to ${delivered} of ${recipients} recipients`
+            })
+        } catch {
+            toast.error('Failed to send broadcast')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleSendDraft = async (broadcast: Broadcast) => {
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1500))
+
+            const delivered = Math.floor(broadcast.recipients * (0.95 + Math.random() * 0.05))
+
+            setBroadcasts(broadcasts.map(b =>
+                b.id === broadcast.id
+                    ? {
+                        ...b,
+                        status: 'sent',
+                        sentDate: new Date().toISOString().split('T')[0],
+                        delivered,
+                    }
+                    : b
+            ))
+            toast.success('Broadcast sent successfully', {
+                description: `Sent to ${delivered} of ${broadcast.recipients} recipients`
+            })
+        } catch {
+            toast.error('Failed to send broadcast')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleUpdateBroadcast = async () => {
+        if (!selectedBroadcast || !formData.title || !formData.message) {
+            toast.error('Please fill in required fields')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            setBroadcasts(broadcasts.map(b =>
+                b.id === selectedBroadcast.id
+                    ? {
+                        ...b,
+                        title: formData.title,
+                        message: formData.message,
+                        audience: formData.audience || b.audience,
+                        channel: (formData.channel as Broadcast['channel']) || b.channel,
+                    }
+                    : b
+            ))
+            setIsEditDialogOpen(false)
+            setSelectedBroadcast(null)
+            toast.success('Broadcast updated successfully')
+        } catch {
+            toast.error('Failed to update broadcast')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!selectedBroadcast) return
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            setBroadcasts(broadcasts.filter(b => b.id !== selectedBroadcast.id))
+            setIsDeleteDialogOpen(false)
+            setSelectedBroadcast(null)
+            toast.success('Broadcast deleted')
+        } catch {
+            toast.error('Failed to delete broadcast')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const openViewDialog = (broadcast: Broadcast) => {
+        setSelectedBroadcast(broadcast)
+        setIsViewDialogOpen(true)
+    }
+
+    const openEditDialog = (broadcast: Broadcast) => {
+        setSelectedBroadcast(broadcast)
+        setFormData({
+            title: broadcast.title,
+            message: broadcast.message,
+            audience: broadcast.audience,
+            channel: broadcast.channel,
+            scheduleDate: broadcast.sentDate,
+        })
+        setIsEditDialogOpen(true)
+    }
+
+    const openDeleteDialog = (broadcast: Broadcast) => {
+        setSelectedBroadcast(broadcast)
+        setIsDeleteDialogOpen(true)
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -191,20 +397,29 @@ export default function BroadcastsPage() {
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input placeholder="Enter broadcast title" />
+                                <Label>Title *</Label>
+                                <Input
+                                    placeholder="Enter broadcast title"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label>Message</Label>
+                                <Label>Message *</Label>
                                 <Textarea
                                     placeholder="Type your message here..."
                                     rows={4}
+                                    value={formData.message}
+                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Target Audience</Label>
-                                    <Select>
+                                    <Select
+                                        value={formData.audience}
+                                        onValueChange={(value) => setFormData({ ...formData, audience: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select audience" />
                                         </SelectTrigger>
@@ -219,7 +434,10 @@ export default function BroadcastsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Channel</Label>
-                                    <Select>
+                                    <Select
+                                        value={formData.channel}
+                                        onValueChange={(value) => setFormData({ ...formData, channel: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select channel" />
                                         </SelectTrigger>
@@ -234,15 +452,29 @@ export default function BroadcastsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Schedule (Optional)</Label>
-                                <Input type="datetime-local" />
+                                <Input
+                                    type="datetime-local"
+                                    value={formData.scheduleDate}
+                                    onChange={(e) => setFormData({ ...formData, scheduleDate: e.target.value })}
+                                />
                             </div>
                             <div className="flex justify-end gap-3 pt-4">
-                                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                                <Button variant="outline" onClick={handleSaveAsDraft} disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Save as Draft
                                 </Button>
-                                <Button className="gradient-primary" onClick={() => setIsAddDialogOpen(false)}>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Send Now
+                                <Button className="gradient-primary" onClick={handleSendNow} disabled={isLoading}>
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="mr-2 h-4 w-4" />
+                                            Send Now
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </div>
@@ -389,23 +621,26 @@ export default function BroadcastsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openViewDialog(broadcast)}>
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Details
                                                 </DropdownMenuItem>
                                                 {broadcast.status === 'draft' && (
                                                     <>
-                                                        <DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => openEditDialog(broadcast)}>
                                                             <Edit className="mr-2 h-4 w-4" />
                                                             Edit
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleSendDraft(broadcast)}>
                                                             <Send className="mr-2 h-4 w-4" />
                                                             Send Now
                                                         </DropdownMenuItem>
                                                     </>
                                                 )}
-                                                <DropdownMenuItem className="text-red-500">
+                                                <DropdownMenuItem
+                                                    className="text-red-500"
+                                                    onClick={() => openDeleteDialog(broadcast)}
+                                                >
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -418,6 +653,118 @@ export default function BroadcastsPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* View Dialog */}
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Broadcast Details</DialogTitle>
+                    </DialogHeader>
+                    {selectedBroadcast && (
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Title</p>
+                                <p className="font-medium">{selectedBroadcast.title}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Message</p>
+                                <p className="text-sm">{selectedBroadcast.message}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Audience</p>
+                                    <p className="font-medium">{selectedBroadcast.audience}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Channel</p>
+                                    <div className="flex items-center gap-2">
+                                        {getChannelIcon(selectedBroadcast.channel)}
+                                        <span className="capitalize">{selectedBroadcast.channel}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Status</p>
+                                    {getStatusBadge(selectedBroadcast.status)}
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Sent Date</p>
+                                    <p className="font-medium">{selectedBroadcast.sentDate || 'Not sent'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Recipients</p>
+                                    <p className="font-medium">{selectedBroadcast.recipients}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Delivered</p>
+                                    <p className="font-medium">{selectedBroadcast.delivered}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Broadcast</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Title</Label>
+                            <Input
+                                value={formData.title}
+                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Message</Label>
+                            <Textarea
+                                rows={4}
+                                value={formData.message}
+                                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-3 pt-4">
+                            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button className="gradient-primary" onClick={handleUpdateBroadcast} disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save Changes'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Broadcast</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{selectedBroadcast?.title}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-500 hover:bg-red-600"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

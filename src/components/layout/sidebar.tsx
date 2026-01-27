@@ -71,6 +71,7 @@ const schoolAdminNav: NavItem[] = [
         children: [
             { title: 'All Students', href: '/school/admin/students', icon: Users },
             { title: 'Attendance', href: '/school/admin/students/attendance', icon: UserCheck },
+            { title: 'Bulk Login', href: '/school/admin/students/bulk-login', icon: UserPlus },
             { title: 'Classes', href: '/school/admin/academics/classes', icon: Building2 },
         ]
     },
@@ -109,7 +110,15 @@ const schoolAdminNav: NavItem[] = [
         ]
     },
     { title: 'Communication', href: '/school/admin/communications/broadcasts', icon: Bell },
-    { title: 'Settings', href: '/school/admin/settings', icon: Settings },
+    {
+        title: 'Settings',
+        href: '/school/admin/settings',
+        icon: Settings,
+        children: [
+            { title: 'General', href: '/school/admin/settings', icon: Settings },
+            { title: 'Portal Design', href: '/school/admin/settings/portal', icon: Building2 },
+        ]
+    },
 ]
 
 const teacherNav: NavItem[] = [
@@ -131,6 +140,7 @@ const parentNav: NavItem[] = [
     { title: 'Homework', href: '/portal/homework', icon: BookOpen },
     { title: 'Diary', href: '/portal/diary', icon: FileText },
     { title: 'Transport', href: '/portal/transport', icon: Bus },
+    { title: 'Settings', href: '/portal/settings', icon: Settings },
 ]
 
 function getNavItems(role: SidebarProps['role']): NavItem[] {

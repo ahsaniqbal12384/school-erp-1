@@ -38,7 +38,9 @@ import {
     FileText,
     Download,
     Building2,
+    Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Expense {
     id: string
@@ -50,6 +52,7 @@ interface Expense {
     date: string
     status: 'approved' | 'pending' | 'rejected'
     paidBy: string
+    notes?: string
 }
 
 const sampleExpenses: Expense[] = [
@@ -62,11 +65,24 @@ const sampleExpenses: Expense[] = [
     { id: '7', voucherNo: 'EXP-2024-007', category: 'Cleaning', description: 'Monthly Cleaning Service', vendor: 'CleanPro', amount: 45000, date: '2024-01-01', status: 'approved', paidBy: 'Cash' },
 ]
 
+const emptyFormData = {
+    category: '',
+    description: '',
+    vendor: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    paidBy: '',
+    notes: '',
+}
+
 export default function ExpensesPage() {
-    const [expenses] = useState<Expense[]>(sampleExpenses)
+    const [expenses, setExpenses] = useState<Expense[]>(sampleExpenses)
     const [searchQuery, setSearchQuery] = useState('')
     const [categoryFilter, setCategoryFilter] = useState<string>('all')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+    const [formData, setFormData] = useState(emptyFormData)
+    const [isLoading, setIsLoading] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
 
     const filteredExpenses = expenses.filter((expense) => {
         const matchesSearch =
@@ -92,6 +108,92 @@ export default function ExpensesPage() {
         }
     }
 
+    const generateVoucherNo = () => {
+        const year = new Date().getFullYear()
+        const nextNum = expenses.length + 1
+        return `EXP-${year}-${String(nextNum).padStart(3, '0')}`
+    }
+
+    const handleAddExpense = async () => {
+        if (!formData.category || !formData.description || !formData.vendor || !formData.amount || !formData.paidBy) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            const newExpense: Expense = {
+                id: String(expenses.length + 1),
+                voucherNo: generateVoucherNo(),
+                category: formData.category,
+                description: formData.description,
+                vendor: formData.vendor,
+                amount: parseInt(formData.amount),
+                date: formData.date,
+                status: 'pending',
+                paidBy: formData.paidBy,
+                notes: formData.notes,
+            }
+
+            setExpenses([newExpense, ...expenses])
+            setFormData(emptyFormData)
+            setIsAddDialogOpen(false)
+            toast.success('Expense recorded successfully', {
+                description: `Voucher No: ${newExpense.voucherNo}`
+            })
+        } catch {
+            toast.error('Failed to record expense')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleExport = async () => {
+        setIsExporting(true)
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            // Create CSV content
+            const headers = ['Voucher No', 'Description', 'Category', 'Vendor', 'Amount (Rs.)', 'Date', 'Payment Method', 'Status']
+            const rows = filteredExpenses.map(e => [
+                e.voucherNo,
+                e.description,
+                e.category,
+                e.vendor,
+                e.amount,
+                new Date(e.date).toLocaleDateString(),
+                e.paidBy,
+                e.status
+            ])
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n')
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(url)
+
+            toast.success('Expenses exported successfully', {
+                description: `Exported ${filteredExpenses.length} records`
+            })
+        } catch {
+            toast.error('Failed to export expenses')
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -102,9 +204,18 @@ export default function ExpensesPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
+                    <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+                        {isExporting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Exporting...
+                            </>
+                        ) : (
+                            <>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export
+                            </>
+                        )}
                     </Button>
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                         <DialogTrigger asChild>
@@ -120,62 +231,105 @@ export default function ExpensesPage() {
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Category</Label>
-                                        <Select>
+                                        <Label>Category *</Label>
+                                        <Select
+                                            value={formData.category}
+                                            onValueChange={(value) => setFormData({ ...formData, category: value })}
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="utilities">Utilities</SelectItem>
-                                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                <SelectItem value="supplies">Supplies</SelectItem>
-                                                <SelectItem value="equipment">Equipment</SelectItem>
-                                                <SelectItem value="transport">Transport</SelectItem>
-                                                <SelectItem value="cleaning">Cleaning</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
+                                                <SelectItem value="Utilities">Utilities</SelectItem>
+                                                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                                <SelectItem value="Supplies">Supplies</SelectItem>
+                                                <SelectItem value="Equipment">Equipment</SelectItem>
+                                                <SelectItem value="Transport">Transport</SelectItem>
+                                                <SelectItem value="Cleaning">Cleaning</SelectItem>
+                                                <SelectItem value="Salaries">Salaries</SelectItem>
+                                                <SelectItem value="Other">Other</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Date</Label>
-                                        <Input type="date" />
+                                        <Label>Date *</Label>
+                                        <Input
+                                            type="date"
+                                            value={formData.date}
+                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Input placeholder="Enter expense description" />
+                                    <Label>Description *</Label>
+                                    <Input
+                                        placeholder="Enter expense description"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Vendor/Payee</Label>
-                                        <Input placeholder="Vendor name" />
+                                        <Label>Vendor/Payee *</Label>
+                                        <Input
+                                            placeholder="Vendor name"
+                                            value={formData.vendor}
+                                            onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Amount (Rs.)</Label>
-                                        <Input type="number" placeholder="0" />
+                                        <Label>Amount (Rs.) *</Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="0"
+                                            value={formData.amount}
+                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Payment Method</Label>
-                                    <Select>
+                                    <Label>Payment Method *</Label>
+                                    <Select
+                                        value={formData.paidBy}
+                                        onValueChange={(value) => setFormData({ ...formData, paidBy: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select method" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="cash">Cash</SelectItem>
-                                            <SelectItem value="bank">Bank Transfer</SelectItem>
-                                            <SelectItem value="cheque">Cheque</SelectItem>
-                                            <SelectItem value="card">Card</SelectItem>
+                                            <SelectItem value="Cash">Cash</SelectItem>
+                                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                            <SelectItem value="Cheque">Cheque</SelectItem>
+                                            <SelectItem value="Card">Card</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Notes</Label>
-                                    <Textarea placeholder="Additional notes (optional)" rows={2} />
+                                    <Textarea
+                                        placeholder="Additional notes (optional)"
+                                        rows={2}
+                                        value={formData.notes}
+                                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    />
                                 </div>
                                 <div className="flex justify-end gap-3 pt-4">
-                                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                                    <Button className="gradient-primary" onClick={() => setIsAddDialogOpen(false)}>Save Expense</Button>
+                                    <Button variant="outline" onClick={() => {
+                                        setIsAddDialogOpen(false)
+                                        setFormData(emptyFormData)
+                                    }}>
+                                        Cancel
+                                    </Button>
+                                    <Button className="gradient-primary" onClick={handleAddExpense} disabled={isLoading}>
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save Expense'
+                                        )}
+                                    </Button>
                                 </div>
                             </div>
                         </DialogContent>

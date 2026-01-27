@@ -11,6 +11,11 @@ export function getSchoolSlugFromHost(hostname: string, mainDomain?: string): st
     const hostWithoutPort = hostname.split(':')[0]
     const domainWithoutPort = domain.split(':')[0]
 
+    // Codespaces/preview hosts (e.g., *.app.github.dev) should behave like the main domain
+    if (hostWithoutPort.endsWith('.app.github.dev')) {
+        return null
+    }
+
     // If it's the main domain or localhost, no subdomain
     if (hostWithoutPort === domainWithoutPort || hostWithoutPort === 'localhost') {
         return null

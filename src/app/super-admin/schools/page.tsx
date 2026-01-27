@@ -87,6 +87,7 @@ export default function SchoolsManagementPage() {
     const [selectedSchool, setSelectedSchool] = useState<SchoolWithRelations | null>(null)
     const [enabledModules, setEnabledModules] = useState<string[]>([])
     const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 })
+    const [platformDomain, setPlatformDomain] = useState<string>('')
 
     // New/Edit school form state (simplified - no subscription plan)
     const [formData, setFormData] = useState({
@@ -146,10 +147,26 @@ export default function SchoolsManagementPage() {
         }
     }, [pagination.page, pagination.limit, statusFilter, searchQuery, toast])
 
+    // Fetch platform settings (for domain)
+    const fetchPlatformSettings = useCallback(async () => {
+        try {
+            const res = await fetch('/api/settings')
+            if (res.ok) {
+                const data = await res.json()
+                if (data.settings?.platform_domain) {
+                    setPlatformDomain(data.settings.platform_domain)
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch platform settings:', error)
+        }
+    }, [])
+
     // Fetch schools on mount and when filters change
     useEffect(() => {
         fetchSchools()
-    }, [fetchSchools])
+        fetchPlatformSettings()
+    }, [fetchSchools, fetchPlatformSettings])
 
     // Debounce search
     useEffect(() => {
@@ -416,9 +433,13 @@ export default function SchoolsManagementPage() {
         }
     }
 
+    // Get the current domain - prefer API settings, fallback to env, then localhost
+    const displayDomain = platformDomain || process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
+    const isLocalhost = displayDomain.includes('localhost')
+    const protocol = isLocalhost ? 'http' : 'https'
+
     const copySchoolUrl = (slug: string) => {
-        const domain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
-        const url = `${slug}.${domain}`
+        const url = `${protocol}://${slug}.${displayDomain}`
         navigator.clipboard.writeText(url)
         toast({
             title: "Copied!",
@@ -451,9 +472,6 @@ export default function SchoolsManagementPage() {
     const activeSchools = schools.filter(s => s.subscription_status === 'active' && s.is_active).length
     const suspendedSchools = schools.filter(s => s.subscription_status === 'suspended').length
     const totalStudents = schools.reduce((acc, s) => acc + (s.current_students || 0), 0)
-
-    // Get the current domain for display
-    const displayDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
 
     return (
         <div className="space-y-6">
@@ -743,7 +761,7 @@ export default function SchoolsManagementPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => {
-                                                        const url = `http://${school.slug}.${displayDomain}`
+                                                        const url = `${protocol}://${school.slug}.${displayDomain}`
                                                         window.open(url, '_blank')
                                                     }}>
                                                         <ExternalLink className="mr-2 h-4 w-4" />

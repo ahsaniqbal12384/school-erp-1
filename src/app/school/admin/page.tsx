@@ -18,6 +18,7 @@ import {
     AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import { TodoWidget } from '@/components/dashboard/todo-widget'
 
 const stats = [
     {
@@ -154,7 +155,7 @@ export default function SchoolAdminDashboard() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming Events */}
                 <Card>
                     <CardHeader>
@@ -192,6 +193,9 @@ export default function SchoolAdminDashboard() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Todo Widget */}
+                <TodoWidget maxItems={6} />
 
                 {/* Recent Activity */}
                 <Card>

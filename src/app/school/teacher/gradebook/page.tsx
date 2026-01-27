@@ -29,7 +29,9 @@ import {
     TrendingUp,
     Award,
     BookOpen,
+    Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Student {
     id: string
@@ -45,6 +47,25 @@ interface Student {
     grade: string
 }
 
+const calculateGrade = (total: number): string => {
+    if (total >= 135) return 'A+'
+    if (total >= 120) return 'A'
+    if (total >= 105) return 'B+'
+    if (total >= 90) return 'B'
+    if (total >= 75) return 'C+'
+    if (total >= 60) return 'C'
+    return 'F'
+}
+
+const calculateTotal = (student: Student): number => {
+    return (student.assignment1 || 0) +
+        (student.assignment2 || 0) +
+        (student.quiz1 || 0) +
+        (student.quiz2 || 0) +
+        (student.midterm || 0) +
+        (student.final || 0)
+}
+
 const sampleStudents: Student[] = [
     { id: '1', rollNo: '1001', name: 'Ahmed Khan', assignment1: 18, assignment2: 20, quiz1: 9, quiz2: 8, midterm: 42, final: null, total: 97, grade: 'A' },
     { id: '2', rollNo: '1002', name: 'Fatima Ali', assignment1: 20, assignment2: 19, quiz1: 10, quiz2: 9, midterm: 45, final: null, total: 103, grade: 'A+' },
@@ -57,9 +78,12 @@ const sampleStudents: Student[] = [
 ]
 
 export default function TeacherGradebookPage() {
-    const [students] = useState<Student[]>(sampleStudents)
+    const [students, setStudents] = useState<Student[]>(sampleStudents)
     const [selectedClass, setSelectedClass] = useState<string>('10-A')
     const [searchQuery, setSearchQuery] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
+    const [hasChanges, setHasChanges] = useState(false)
 
     const filteredStudents = students.filter((student) =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -78,6 +102,85 @@ export default function TeacherGradebookPage() {
         return <Badge variant="outline">{grade}</Badge>
     }
 
+    const updateGrade = (studentId: string, field: keyof Student, value: string) => {
+        const numValue = value === '' ? null : parseInt(value, 10)
+
+        setStudents(prev => prev.map(student => {
+            if (student.id !== studentId) return student
+
+            const updatedStudent = { ...student, [field]: numValue }
+            const newTotal = calculateTotal(updatedStudent)
+            const newGrade = calculateGrade(newTotal)
+
+            return { ...updatedStudent, total: newTotal, grade: newGrade }
+        }))
+        setHasChanges(true)
+    }
+
+    const handleSaveChanges = async () => {
+        setIsSaving(true)
+        try {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500))
+
+            setHasChanges(false)
+            toast.success('Grades saved successfully', {
+                description: `Updated grades for ${students.length} students`
+            })
+        } catch {
+            toast.error('Failed to save grades')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleExportGrades = async () => {
+        setIsExporting(true)
+        try {
+            // Simulate export preparation
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            // Create CSV content
+            const headers = ['Roll No', 'Student Name', 'Assignment 1', 'Assignment 2', 'Quiz 1', 'Quiz 2', 'Midterm', 'Final', 'Total', 'Grade']
+            const rows = students.map(s => [
+                s.rollNo,
+                s.name,
+                s.assignment1 || '-',
+                s.assignment2 || '-',
+                s.quiz1 || '-',
+                s.quiz2 || '-',
+                s.midterm || '-',
+                s.final || '-',
+                s.total,
+                s.grade
+            ])
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n')
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `gradebook_class_${selectedClass}_${new Date().toISOString().split('T')[0]}.csv`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(url)
+
+            toast.success('Grades exported successfully', {
+                description: `Downloaded gradebook for Class ${selectedClass}`
+            })
+        } catch {
+            toast.error('Failed to export grades')
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -88,16 +191,44 @@ export default function TeacherGradebookPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export Grades
+                    <Button variant="outline" onClick={handleExportGrades} disabled={isExporting}>
+                        {isExporting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Exporting...
+                            </>
+                        ) : (
+                            <>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export Grades
+                            </>
+                        )}
                     </Button>
-                    <Button className="gradient-primary">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Changes
+                    <Button
+                        className="gradient-primary"
+                        onClick={handleSaveChanges}
+                        disabled={isSaving || !hasChanges}
+                    >
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="mr-2 h-4 w-4" />
+                                Save Changes
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>
+
+            {hasChanges && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 px-4 py-2 rounded-lg text-sm">
+                    You have unsaved changes. Click &quot;Save Changes&quot; to save your grades.
+                </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-4">
@@ -187,7 +318,7 @@ export default function TeacherGradebookPage() {
                     <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                             <ClipboardList className="h-5 w-5" />
-                            Mathematics - Class 10-A Gradebook
+                            Mathematics - Class {selectedClass} Gradebook
                         </CardTitle>
                         <div className="flex gap-2 text-sm text-muted-foreground">
                             <span>Assign: 20</span>
@@ -225,49 +356,61 @@ export default function TeacherGradebookPage() {
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.assignment1 || ''}
+                                                value={student.assignment1 ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'assignment1', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={20}
+                                                min={0}
                                             />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.assignment2 || ''}
+                                                value={student.assignment2 ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'assignment2', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={20}
+                                                min={0}
                                             />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.quiz1 || ''}
+                                                value={student.quiz1 ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'quiz1', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={10}
+                                                min={0}
                                             />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.quiz2 || ''}
+                                                value={student.quiz2 ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'quiz2', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={10}
+                                                min={0}
                                             />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.midterm || ''}
+                                                value={student.midterm ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'midterm', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={50}
+                                                min={0}
                                             />
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <Input
                                                 type="number"
-                                                defaultValue={student.final || ''}
+                                                value={student.final ?? ''}
+                                                onChange={(e) => updateGrade(student.id, 'final', e.target.value)}
                                                 className="w-16 h-8 text-center mx-auto"
                                                 max={70}
+                                                min={0}
                                                 placeholder="-"
                                             />
                                         </TableCell>
