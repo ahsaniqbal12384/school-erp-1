@@ -11,3 +11,12 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Environment variables must be set in Netlify dashboard
+# They are required for the build to succeed and the app to function
+[context.production.environment]
+  # These MUST be set in Netlify Site Settings > Build & Deploy > Environment
+  # NEXT_PUBLIC_SUPABASE_URL = "your-supabase-url"
+  # NEXT_PUBLIC_SUPABASE_ANON_KEY = "your-anon-key"
+  # SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+  # NEXT_PUBLIC_MAIN_DOMAIN = "your-domain.com"
