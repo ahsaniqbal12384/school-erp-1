@@ -20,16 +20,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -40,9 +30,11 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import {
+    BookOpen,
     Plus,
     Search,
     Calendar,
+    Clock,
     FileText,
     Users,
     MoreHorizontal,
@@ -50,9 +42,6 @@ import {
     Trash2,
     Eye,
     CheckCircle,
-    Loader2,
-    Save,
-    Send,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -60,7 +49,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
 
 interface DiaryEntry {
     id: string
@@ -121,26 +109,11 @@ const sampleDiary: DiaryEntry[] = [
     },
 ]
 
-const emptyFormData = {
-    date: new Date().toISOString().split('T')[0],
-    class: '',
-    subject: 'Mathematics',
-    topic: '',
-    description: '',
-    homework: '',
-}
-
 export default function TeacherDiaryPage() {
-    const [entries, setEntries] = useState<DiaryEntry[]>(sampleDiary)
+    const [entries] = useState<DiaryEntry[]>(sampleDiary)
     const [searchQuery, setSearchQuery] = useState('')
     const [classFilter, setClassFilter] = useState<string>('all')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
-    const [formData, setFormData] = useState(emptyFormData)
-    const [isLoading, setIsLoading] = useState(false)
 
     const filteredEntries = entries.filter((entry) => {
         const matchesSearch =
@@ -154,154 +127,6 @@ export default function TeacherDiaryPage() {
         (e) => e.date === new Date().toISOString().split('T')[0]
     ).length
     const publishedEntries = entries.filter((e) => e.status === 'published').length
-
-    const handleSaveAsDraft = async () => {
-        if (!formData.class || !formData.topic) {
-            toast.error('Please fill in required fields (Class and Topic)')
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const classSection = formData.class.split('-')
-            const newEntry: DiaryEntry = {
-                id: String(entries.length + 1),
-                date: formData.date,
-                class: classSection[0] || 'Class 10',
-                section: classSection[1] || 'A',
-                subject: formData.subject,
-                topic: formData.topic,
-                description: formData.description,
-                homework: formData.homework,
-                status: 'draft',
-            }
-
-            setEntries([newEntry, ...entries])
-            setFormData(emptyFormData)
-            setIsAddDialogOpen(false)
-            toast.success('Entry saved as draft', {
-                description: 'You can publish it later from the entries list'
-            })
-        } catch {
-            toast.error('Failed to save entry')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handlePublishEntry = async () => {
-        if (!formData.class || !formData.topic) {
-            toast.error('Please fill in required fields (Class and Topic)')
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const classSection = formData.class.split('-')
-            const newEntry: DiaryEntry = {
-                id: String(entries.length + 1),
-                date: formData.date,
-                class: classSection[0] || 'Class 10',
-                section: classSection[1] || 'A',
-                subject: formData.subject,
-                topic: formData.topic,
-                description: formData.description,
-                homework: formData.homework,
-                status: 'published',
-            }
-
-            setEntries([newEntry, ...entries])
-            setFormData(emptyFormData)
-            setIsAddDialogOpen(false)
-            toast.success('Entry published successfully', {
-                description: 'Parents can now view this entry'
-            })
-        } catch {
-            toast.error('Failed to publish entry')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleEditEntry = async (publish: boolean = false) => {
-        if (!selectedEntry || !formData.topic) {
-            toast.error('Please fill in required fields')
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const classSection = formData.class.split('-')
-            setEntries(entries.map(entry =>
-                entry.id === selectedEntry.id
-                    ? {
-                        ...entry,
-                        date: formData.date,
-                        class: classSection[0] || entry.class,
-                        section: classSection[1] || entry.section,
-                        topic: formData.topic,
-                        description: formData.description,
-                        homework: formData.homework,
-                        status: publish ? 'published' : entry.status,
-                    }
-                    : entry
-            ))
-
-            setIsEditDialogOpen(false)
-            setSelectedEntry(null)
-            toast.success(publish ? 'Entry published successfully' : 'Entry updated successfully')
-        } catch {
-            toast.error('Failed to update entry')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleDeleteEntry = async () => {
-        if (!selectedEntry) return
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            setEntries(entries.filter(entry => entry.id !== selectedEntry.id))
-            setIsDeleteDialogOpen(false)
-            setSelectedEntry(null)
-            toast.success('Entry deleted successfully')
-        } catch {
-            toast.error('Failed to delete entry')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const openEditDialog = (entry: DiaryEntry) => {
-        setSelectedEntry(entry)
-        setFormData({
-            date: entry.date,
-            class: `${entry.class}-${entry.section}`,
-            subject: entry.subject,
-            topic: entry.topic,
-            description: entry.description,
-            homework: entry.homework,
-        })
-        setIsEditDialogOpen(true)
-    }
-
-    const openViewDialog = (entry: DiaryEntry) => {
-        setSelectedEntry(entry)
-        setIsViewDialogOpen(true)
-    }
-
-    const openDeleteDialog = (entry: DiaryEntry) => {
-        setSelectedEntry(entry)
-        setIsDeleteDialogOpen(true)
-    }
 
     return (
         <div className="space-y-6">
@@ -327,50 +152,37 @@ export default function TeacherDiaryPage() {
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label>Date</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    />
+                                    <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Class *</Label>
-                                    <Select
-                                        value={formData.class}
-                                        onValueChange={(value) => setFormData({ ...formData, class: value })}
-                                    >
+                                    <Label>Class</Label>
+                                    <Select>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select class" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Class 10-A">Class 10-A</SelectItem>
-                                            <SelectItem value="Class 10-B">Class 10-B</SelectItem>
-                                            <SelectItem value="Class 9-A">Class 9-A</SelectItem>
-                                            <SelectItem value="Class 9-B">Class 9-B</SelectItem>
-                                            <SelectItem value="Class 8-A">Class 8-A</SelectItem>
+                                            <SelectItem value="10-A">Class 10-A</SelectItem>
+                                            <SelectItem value="10-B">Class 10-B</SelectItem>
+                                            <SelectItem value="9-A">Class 9-A</SelectItem>
+                                            <SelectItem value="9-B">Class 9-B</SelectItem>
+                                            <SelectItem value="8-A">Class 8-A</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Subject</Label>
-                                    <Input value={formData.subject} readOnly />
+                                    <Input defaultValue="Mathematics" readOnly />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Topic Covered *</Label>
-                                <Input
-                                    placeholder="Enter today's topic"
-                                    value={formData.topic}
-                                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                                />
+                                <Label>Topic Covered</Label>
+                                <Input placeholder="Enter today's topic" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Lesson Description</Label>
                                 <Textarea
                                     placeholder="Describe what was taught in today's class..."
                                     rows={3}
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -378,25 +190,13 @@ export default function TeacherDiaryPage() {
                                 <Textarea
                                     placeholder="Enter homework details..."
                                     rows={2}
-                                    value={formData.homework}
-                                    onChange={(e) => setFormData({ ...formData, homework: e.target.value })}
                                 />
                             </div>
                             <div className="flex justify-end gap-3 pt-4">
-                                <Button variant="outline" onClick={handleSaveAsDraft} disabled={isLoading}>
-                                    {isLoading ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="mr-2 h-4 w-4" />
-                                    )}
+                                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                                     Save as Draft
                                 </Button>
-                                <Button className="gradient-primary" onClick={handlePublishEntry} disabled={isLoading}>
-                                    {isLoading ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Send className="mr-2 h-4 w-4" />
-                                    )}
+                                <Button className="gradient-primary" onClick={() => setIsAddDialogOpen(false)}>
                                     Publish Entry
                                 </Button>
                             </div>
@@ -535,18 +335,15 @@ export default function TeacherDiaryPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openViewDialog(entry)}>
+                                                <DropdownMenuItem>
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openEditDialog(entry)}>
+                                                <DropdownMenuItem>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit Entry
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-red-500"
-                                                    onClick={() => openDeleteDialog(entry)}
-                                                >
+                                                <DropdownMenuItem className="text-red-500">
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -559,181 +356,6 @@ export default function TeacherDiaryPage() {
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Edit Diary Entry</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label>Date</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.date}
-                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Class *</Label>
-                                <Select
-                                    value={formData.class}
-                                    onValueChange={(value) => setFormData({ ...formData, class: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select class" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Class 10-A">Class 10-A</SelectItem>
-                                        <SelectItem value="Class 10-B">Class 10-B</SelectItem>
-                                        <SelectItem value="Class 9-A">Class 9-A</SelectItem>
-                                        <SelectItem value="Class 9-B">Class 9-B</SelectItem>
-                                        <SelectItem value="Class 8-A">Class 8-A</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Subject</Label>
-                                <Input value={formData.subject} readOnly />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Topic Covered *</Label>
-                            <Input
-                                placeholder="Enter today's topic"
-                                value={formData.topic}
-                                onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Lesson Description</Label>
-                            <Textarea
-                                placeholder="Describe what was taught in today's class..."
-                                rows={3}
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Homework Assigned</Label>
-                            <Textarea
-                                placeholder="Enter homework details..."
-                                rows={2}
-                                value={formData.homework}
-                                onChange={(e) => setFormData({ ...formData, homework: e.target.value })}
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="outline" onClick={() => handleEditEntry(false)} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save
-                            </Button>
-                            {selectedEntry?.status === 'draft' && (
-                                <Button className="gradient-primary" onClick={() => handleEditEntry(true)} disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                    Publish
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Dialog */}
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Diary Entry Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedEntry && (
-                        <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Date</p>
-                                    <p className="font-medium">{new Date(selectedEntry.date).toLocaleDateString()}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Class</p>
-                                    <p className="font-medium">{selectedEntry.class} - {selectedEntry.section}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Subject</p>
-                                    <p className="font-medium">{selectedEntry.subject}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Topic</p>
-                                <p className="font-medium text-lg">{selectedEntry.topic}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Description</p>
-                                <p className="mt-1">{selectedEntry.description || 'No description provided'}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Homework Assigned</p>
-                                <div className="mt-1 p-3 bg-muted rounded-lg">
-                                    {selectedEntry.homework || 'No homework assigned'}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <p className="text-sm text-muted-foreground">Status:</p>
-                                {selectedEntry.status === 'published' ? (
-                                    <Badge className="bg-green-500/10 text-green-500">Published</Badge>
-                                ) : (
-                                    <Badge variant="outline">Draft</Badge>
-                                )}
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                                    Close
-                                </Button>
-                                <Button onClick={() => {
-                                    setIsViewDialogOpen(false)
-                                    openEditDialog(selectedEntry)
-                                }}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit Entry
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Diary Entry?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete the entry for &quot;{selectedEntry?.topic}&quot;?
-                            This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setSelectedEntry(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDeleteEntry}
-                            className="bg-red-500 hover:bg-red-600"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                'Delete'
-                            )}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     )
 }

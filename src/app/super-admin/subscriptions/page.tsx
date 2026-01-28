@@ -21,14 +21,6 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import {
     Wallet,
     Search,
     Building2,
@@ -40,8 +32,6 @@ import {
     Eye,
     RefreshCw,
     CreditCard,
-    FileText,
-    X,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -143,11 +133,6 @@ export default function SubscriptionsPage() {
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [planFilter, setPlanFilter] = useState<string>('all')
-    const [invoicesOpen, setInvoicesOpen] = useState(false)
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedSub, setSelectedSub] = useState<Subscription | null>(null)
-    const [renewOpen, setRenewOpen] = useState(false)
-    const [paymentOpen, setPaymentOpen] = useState(false)
 
     const filteredSubscriptions = subscriptions.filter((sub) => {
         const matchesSearch =
@@ -157,31 +142,6 @@ export default function SubscriptionsPage() {
         const matchesPlan = planFilter === 'all' || sub.plan === planFilter
         return matchesSearch && matchesStatus && matchesPlan
     })
-
-    const handleViewDetails = (sub: Subscription) => {
-        setSelectedSub(sub)
-        setDetailsOpen(true)
-    }
-
-    const handleRenewSubscription = (sub: Subscription) => {
-        setSelectedSub(sub)
-        setRenewOpen(true)
-    }
-
-    const handleRecordPayment = (sub: Subscription) => {
-        setSelectedSub(sub)
-        setPaymentOpen(true)
-    }
-
-    const handleConfirmRenew = () => {
-        toast.success(`Subscription renewed for ${selectedSub?.schoolName}`)
-        setRenewOpen(false)
-    }
-
-    const handleConfirmPayment = () => {
-        toast.success(`Payment recorded for ${selectedSub?.schoolName}`)
-        setPaymentOpen(false)
-    }
 
     const getStatusBadge = (status: Subscription['status']) => {
         switch (status) {
@@ -252,7 +212,7 @@ export default function SubscriptionsPage() {
                         Manage school subscriptions and billing
                     </p>
                 </div>
-                <Button className="gradient-primary" onClick={() => setInvoicesOpen(true)}>
+                <Button className="gradient-primary">
                     <CreditCard className="mr-2 h-4 w-4" />
                     View Invoices
                 </Button>
@@ -393,15 +353,15 @@ export default function SubscriptionsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleViewDetails(sub)}>
+                                                <DropdownMenuItem>
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleRenewSubscription(sub)}>
+                                                <DropdownMenuItem>
                                                     <RefreshCw className="mr-2 h-4 w-4" />
                                                     Renew Subscription
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleRecordPayment(sub)}>
+                                                <DropdownMenuItem>
                                                     <CreditCard className="mr-2 h-4 w-4" />
                                                     Record Payment
                                                 </DropdownMenuItem>
@@ -414,160 +374,6 @@ export default function SubscriptionsPage() {
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Invoices Dialog */}
-            <Dialog open={invoicesOpen} onOpenChange={setInvoicesOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
-                            Invoices
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Invoice #</TableHead>
-                                    <TableHead>School</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Date</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subscriptions.slice(0, 5).map((sub, i) => (
-                                    <TableRow key={sub.id}>
-                                        <TableCell className="font-mono">INV-2024-{String(i + 1).padStart(3, '0')}</TableCell>
-                                        <TableCell>{sub.schoolName}</TableCell>
-                                        <TableCell>Rs. {sub.amount.toLocaleString()}</TableCell>
-                                        <TableCell>{getPaymentBadge(sub.paymentStatus)}</TableCell>
-                                        <TableCell>{sub.lastPayment}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Details Dialog */}
-            <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Subscription Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedSub && (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-muted-foreground">School</Label>
-                                    <p className="font-medium">{selectedSub.schoolName}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Code</Label>
-                                    <p className="font-medium">{selectedSub.schoolCode}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Plan</Label>
-                                    <p className="font-medium capitalize">{selectedSub.plan}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Amount</Label>
-                                    <p className="font-medium">Rs. {selectedSub.amount.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Start Date</Label>
-                                    <p className="font-medium">{selectedSub.startDate}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">End Date</Label>
-                                    <p className="font-medium">{selectedSub.endDate}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Status</Label>
-                                    <div className="mt-1">{getStatusBadge(selectedSub.status)}</div>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Payment</Label>
-                                    <div className="mt-1">{getPaymentBadge(selectedSub.paymentStatus)}</div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Renew Dialog */}
-            <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Renew Subscription</DialogTitle>
-                    </DialogHeader>
-                    {selectedSub && (
-                        <div className="space-y-4">
-                            <p>Renew subscription for <strong>{selectedSub.schoolName}</strong>?</p>
-                            <div className="space-y-2">
-                                <Label>New Plan</Label>
-                                <Select defaultValue={selectedSub.plan}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="basic">Basic - Rs. 40,000/year</SelectItem>
-                                        <SelectItem value="standard">Standard - Rs. 80,000/year</SelectItem>
-                                        <SelectItem value="premium">Premium - Rs. 150,000/year</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setRenewOpen(false)}>Cancel</Button>
-                                <Button className="gradient-primary" onClick={handleConfirmRenew}>Confirm Renewal</Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Record Payment Dialog */}
-            <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Record Payment</DialogTitle>
-                    </DialogHeader>
-                    {selectedSub && (
-                        <div className="space-y-4">
-                            <p>Record payment for <strong>{selectedSub.schoolName}</strong></p>
-                            <div className="space-y-2">
-                                <Label>Amount (Rs.)</Label>
-                                <Input type="number" defaultValue={selectedSub.amount} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Payment Method</Label>
-                                <Select defaultValue="bank">
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="bank">Bank Transfer</SelectItem>
-                                        <SelectItem value="jazzcash">JazzCash</SelectItem>
-                                        <SelectItem value="easypaisa">Easypaisa</SelectItem>
-                                        <SelectItem value="cash">Cash</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Reference Number</Label>
-                                <Input placeholder="Transaction ID" />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setPaymentOpen(false)}>Cancel</Button>
-                                <Button className="gradient-primary" onClick={handleConfirmPayment}>Record Payment</Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

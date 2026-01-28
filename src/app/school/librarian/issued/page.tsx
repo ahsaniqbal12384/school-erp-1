@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,13 +17,11 @@ import {
     BookMarked,
     Search,
     BookOpen,
+    Clock,
     AlertCircle,
     GraduationCap,
     User,
-    Loader2,
-    Download,
 } from 'lucide-react'
-import { toast } from 'sonner'
 
 interface IssuedBook {
     id: string
@@ -51,10 +48,7 @@ const issuedBooks: IssuedBook[] = [
 ]
 
 export default function IssuedBooksPage() {
-    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState('')
-    const [isSendingReminders, setIsSendingReminders] = useState(false)
-    const [isExporting, setIsExporting] = useState(false)
 
     const filteredBooks = issuedBooks.filter((book) =>
         book.book.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -65,63 +59,6 @@ export default function IssuedBooksPage() {
     const totalIssued = issuedBooks.length
     const overdueCount = issuedBooks.filter((b) => b.status === 'overdue').length
     const studentBooks = issuedBooks.filter((b) => b.borrowerType === 'student').length
-    const overdueBooks = issuedBooks.filter((b) => b.status === 'overdue')
-
-    const handleIssueNewBook = () => {
-        router.push('/school/librarian/issue')
-    }
-
-    const handleSendReminders = async () => {
-        setIsSendingReminders(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            
-            toast.success('Reminders sent successfully', {
-                description: `Sent ${overdueBooks.length} reminder(s) to borrowers with overdue books`
-            })
-        } catch {
-            toast.error('Failed to send reminders')
-        } finally {
-            setIsSendingReminders(false)
-        }
-    }
-
-    const handleExport = async () => {
-        setIsExporting(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            const csvContent = [
-                ['Issue ID', 'Book', 'ISBN', 'Borrower', 'Type', 'ID', 'Issue Date', 'Due Date', 'Status', 'Days Overdue'].join(','),
-                ...issuedBooks.map(book => [
-                    book.issueId,
-                    `"${book.book}"`,
-                    book.isbn,
-                    `"${book.borrower}"`,
-                    book.borrowerType,
-                    book.borrowerId,
-                    book.issueDate,
-                    book.dueDate,
-                    book.status,
-                    book.daysOverdue || 0
-                ].join(','))
-            ].join('\n')
-
-            const blob = new Blob([csvContent], { type: 'text/csv' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `issued-books-${new Date().toISOString().split('T')[0]}.csv`
-            a.click()
-            URL.revokeObjectURL(url)
-            
-            toast.success('Exported successfully')
-        } catch {
-            toast.error('Export failed')
-        } finally {
-            setIsExporting(false)
-        }
-    }
 
     return (
         <div className="space-y-6">
@@ -132,20 +69,10 @@ export default function IssuedBooksPage() {
                         Track all currently issued books
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-                        {isExporting ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Download className="mr-2 h-4 w-4" />
-                        )}
-                        Export
-                    </Button>
-                    <Button className="gradient-primary" onClick={handleIssueNewBook}>
-                        <BookMarked className="mr-2 h-4 w-4" />
-                        Issue New Book
-                    </Button>
-                </div>
+                <Button className="gradient-primary">
+                    <BookMarked className="mr-2 h-4 w-4" />
+                    Issue New Book
+                </Button>
             </div>
 
             {/* Overdue Alert */}
@@ -162,16 +89,7 @@ export default function IssuedBooksPage() {
                                     Send reminders to borrowers with overdue books
                                 </p>
                             </div>
-                            <Button variant="outline" onClick={handleSendReminders} disabled={isSendingReminders}>
-                                {isSendingReminders ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    'Send Reminders'
-                                )}
-                            </Button>
+                            <Button variant="outline">Send Reminders</Button>
                         </div>
                     </CardContent>
                 </Card>

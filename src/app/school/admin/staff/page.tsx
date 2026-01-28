@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
     Table,
@@ -14,24 +13,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from '@/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import {
     Select,
     SelectContent,
@@ -52,7 +33,6 @@ import {
     Plus,
     User,
     Building2,
-    Loader2,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -60,7 +40,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
 
 interface StaffMember {
     id: string
@@ -90,29 +69,10 @@ const sampleStaff: StaffMember[] = [
 ]
 
 export default function StaffPage() {
-    const [staff, setStaff] = useState<StaffMember[]>(sampleStaff)
+    const [staff] = useState<StaffMember[]>(sampleStaff)
     const [searchQuery, setSearchQuery] = useState('')
     const [departmentFilter, setDepartmentFilter] = useState<string>('all')
     const [statusFilter, setStatusFilter] = useState<string>('all')
-    
-    // Dialog states
-    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
-    
-    // Form state
-    const [formData, setFormData] = useState({
-        name: '',
-        department: 'Teaching',
-        designation: '',
-        gender: 'male' as 'male' | 'female',
-        phone: '',
-        email: '',
-        salary: 50000,
-    })
 
     const filteredStaff = staff.filter((member) => {
         const matchesSearch =
@@ -140,129 +100,6 @@ export default function StaffPage() {
         }
     }
 
-    const resetForm = () => {
-        setFormData({
-            name: '',
-            department: 'Teaching',
-            designation: '',
-            gender: 'male',
-            phone: '',
-            email: '',
-            salary: 50000,
-        })
-    }
-
-    const handleExport = () => {
-        setIsLoading(true)
-        const headers = ['Employee ID', 'Name', 'Department', 'Designation', 'Gender', 'Phone', 'Email', 'Join Date', 'Salary', 'Status']
-        const csvContent = [
-            headers.join(','),
-            ...filteredStaff.map(s => 
-                [s.employeeId, s.name, s.department, s.designation, s.gender, s.phone, s.email, s.joinDate, s.salary, s.status].join(',')
-            )
-        ].join('\n')
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `staff_export_${new Date().toISOString().split('T')[0]}.csv`
-        a.click()
-        window.URL.revokeObjectURL(url)
-        
-        setIsLoading(false)
-        toast.success('Staff data exported successfully')
-    }
-
-    const handleAddStaff = () => {
-        if (!formData.name || !formData.designation || !formData.phone || !formData.email) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-        
-        setIsLoading(true)
-        const maxId = Math.max(...staff.map(s => parseInt(s.employeeId.replace('EMP', ''))))
-        const newStaff: StaffMember = {
-            id: String(staff.length + 1),
-            employeeId: `EMP${String(maxId + 1).padStart(3, '0')}`,
-            name: formData.name,
-            department: formData.department,
-            designation: formData.designation,
-            gender: formData.gender,
-            phone: formData.phone,
-            email: formData.email,
-            joinDate: new Date().toISOString().split('T')[0],
-            salary: formData.salary,
-            status: 'active',
-        }
-        
-        setTimeout(() => {
-            setStaff([...staff, newStaff])
-            setIsAddDialogOpen(false)
-            resetForm()
-            setIsLoading(false)
-            toast.success(`Staff member ${newStaff.name} added successfully`)
-        }, 500)
-    }
-
-    const handleEditStaff = () => {
-        if (!selectedStaff || !formData.name || !formData.designation || !formData.phone) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-        
-        setIsLoading(true)
-        setTimeout(() => {
-            setStaff(staff.map(s => 
-                s.id === selectedStaff.id 
-                    ? { ...s, ...formData }
-                    : s
-            ))
-            setIsEditDialogOpen(false)
-            setSelectedStaff(null)
-            resetForm()
-            setIsLoading(false)
-            toast.success('Staff member updated successfully')
-        }, 500)
-    }
-
-    const handleDeleteStaff = () => {
-        if (!selectedStaff) return
-        
-        setIsLoading(true)
-        setTimeout(() => {
-            setStaff(staff.filter(s => s.id !== selectedStaff.id))
-            setIsDeleteDialogOpen(false)
-            setSelectedStaff(null)
-            setIsLoading(false)
-            toast.success('Staff member deleted successfully')
-        }, 500)
-    }
-
-    const openViewDialog = (member: StaffMember) => {
-        setSelectedStaff(member)
-        setIsViewDialogOpen(true)
-    }
-
-    const openEditDialog = (member: StaffMember) => {
-        setSelectedStaff(member)
-        setFormData({
-            name: member.name,
-            department: member.department,
-            designation: member.designation,
-            gender: member.gender,
-            phone: member.phone,
-            email: member.email,
-            salary: member.salary,
-        })
-        setIsEditDialogOpen(true)
-    }
-
-    const openDeleteDialog = (member: StaffMember) => {
-        setSelectedStaff(member)
-        setIsDeleteDialogOpen(true)
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -273,11 +110,11 @@ export default function StaffPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    <Button variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <Button className="gradient-primary" onClick={() => { resetForm(); setIsAddDialogOpen(true) }}>
+                    <Button className="gradient-primary">
                         <Plus className="mr-2 h-4 w-4" />
                         Add Staff
                     </Button>
@@ -372,7 +209,7 @@ export default function StaffPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Staff Records ({filteredStaff.length})
+                        Staff Records
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -394,8 +231,10 @@ export default function StaffPage() {
                                     <TableCell className="font-medium">{member.employeeId}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${member.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'}`}>
-                                                <User className={`h-4 w-4 ${member.gender === 'male' ? 'text-blue-500' : 'text-pink-500'}`} />
+                                            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${member.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'
+                                                }`}>
+                                                <User className={`h-4 w-4 ${member.gender === 'male' ? 'text-blue-500' : 'text-pink-500'
+                                                    }`} />
                                             </div>
                                             <span>{member.name}</span>
                                         </div>
@@ -425,15 +264,15 @@ export default function StaffPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openViewDialog(member)}>
+                                                <DropdownMenuItem>
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Profile
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                                                <DropdownMenuItem>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500" onClick={() => openDeleteDialog(member)}>
+                                                <DropdownMenuItem className="text-red-500">
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -442,261 +281,10 @@ export default function StaffPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {filteredStaff.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                        No staff found matching your criteria
-                                    </TableCell>
-                                </TableRow>
-                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Add Staff Dialog */}
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Add New Staff Member</DialogTitle>
-                        <DialogDescription>Enter staff information below</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Full Name *</Label>
-                            <Input 
-                                value={formData.name} 
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Enter full name"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Department</Label>
-                                <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Teaching">Teaching</SelectItem>
-                                        <SelectItem value="Admin">Admin</SelectItem>
-                                        <SelectItem value="Support">Support</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Gender</Label>
-                                <Select value={formData.gender} onValueChange={(v: 'male' | 'female') => setFormData({ ...formData, gender: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="male">Male</SelectItem>
-                                        <SelectItem value="female">Female</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Designation *</Label>
-                            <Input 
-                                value={formData.designation} 
-                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                                placeholder="e.g., Senior Teacher, Office Manager"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Phone Number *</Label>
-                            <Input 
-                                value={formData.phone} 
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+92-300-1234567"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Email *</Label>
-                            <Input 
-                                type="email"
-                                value={formData.email} 
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="staff@school.pk"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Monthly Salary (PKR)</Label>
-                            <Input 
-                                type="number"
-                                value={formData.salary} 
-                                onChange={(e) => setFormData({ ...formData, salary: parseInt(e.target.value) || 0 })}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleAddStaff} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                            Add Staff
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Staff Dialog */}
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Staff Profile</DialogTitle>
-                    </DialogHeader>
-                    {selectedStaff && (
-                        <div className="space-y-4 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${selectedStaff.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'}`}>
-                                    <User className={`h-8 w-8 ${selectedStaff.gender === 'male' ? 'text-blue-500' : 'text-pink-500'}`} />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold">{selectedStaff.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{selectedStaff.employeeId}</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Department</p>
-                                    <p className="font-medium">{selectedStaff.department}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Designation</p>
-                                    <p className="font-medium">{selectedStaff.designation}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Gender</p>
-                                    <p className="font-medium capitalize">{selectedStaff.gender}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Status</p>
-                                    {getStatusBadge(selectedStaff.status)}
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Phone</p>
-                                    <p className="font-medium">{selectedStaff.phone}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Email</p>
-                                    <p className="font-medium">{selectedStaff.email}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Join Date</p>
-                                    <p className="font-medium">{selectedStaff.joinDate}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Salary</p>
-                                    <p className="font-medium">Rs. {selectedStaff.salary.toLocaleString()}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-                        <Button onClick={() => { setIsViewDialogOpen(false); selectedStaff && openEditDialog(selectedStaff) }}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Staff
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Edit Staff Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Edit Staff Member</DialogTitle>
-                        <DialogDescription>Update staff information</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Full Name *</Label>
-                            <Input 
-                                value={formData.name} 
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Department</Label>
-                                <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Teaching">Teaching</SelectItem>
-                                        <SelectItem value="Admin">Admin</SelectItem>
-                                        <SelectItem value="Support">Support</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Gender</Label>
-                                <Select value={formData.gender} onValueChange={(v: 'male' | 'female') => setFormData({ ...formData, gender: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="male">Male</SelectItem>
-                                        <SelectItem value="female">Female</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Designation *</Label>
-                            <Input 
-                                value={formData.designation} 
-                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Phone Number *</Label>
-                            <Input 
-                                value={formData.phone} 
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Email *</Label>
-                            <Input 
-                                type="email"
-                                value={formData.email} 
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Monthly Salary (PKR)</Label>
-                            <Input 
-                                type="number"
-                                value={formData.salary} 
-                                onChange={(e) => setFormData({ ...formData, salary: parseInt(e.target.value) || 0 })}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleEditStaff} disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete <strong>{selectedStaff?.name}</strong>? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteStaff} className="bg-red-500 hover:bg-red-600">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     )
 }

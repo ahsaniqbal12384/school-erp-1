@@ -16,7 +16,6 @@ import {
     UserCheck,
 } from 'lucide-react'
 import Link from 'next/link'
-import { TodoWidget } from '@/components/dashboard/todo-widget'
 
 const stats = [
     {
@@ -127,7 +126,7 @@ export default function TeacherDashboard() {
                 ))}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2">
                 {/* Today's Schedule */}
                 <Card>
                     <CardHeader>
@@ -176,9 +175,6 @@ export default function TeacherDashboard() {
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Todo Widget */}
-                <TodoWidget maxItems={6} />
 
                 {/* Pending Tasks */}
                 <Card>

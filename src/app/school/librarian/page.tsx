@@ -14,11 +14,8 @@ import {
     Calendar,
     Search,
     Plus,
-    Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
-import { useState } from 'react'
 
 const stats = [
     {
@@ -70,16 +67,6 @@ const recentReturns = [
 ]
 
 export default function LibrarianDashboard() {
-    const [isSendingReminders, setIsSendingReminders] = useState(false)
-
-    const handleSendReminders = () => {
-        setIsSendingReminders(true)
-        setTimeout(() => {
-            setIsSendingReminders(false)
-            toast.success('Reminders sent to 48 borrowers with overdue books')
-        }, 1500)
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -136,10 +123,7 @@ export default function LibrarianDashboard() {
                                 Send reminders to borrowers with overdue books
                             </p>
                         </div>
-                        <Button variant="outline" onClick={handleSendReminders} disabled={isSendingReminders}>
-                            {isSendingReminders ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {isSendingReminders ? 'Sending...' : 'Send Reminders'}
-                        </Button>
+                        <Button variant="outline">Send Reminders</Button>
                     </div>
                 </CardContent>
             </Card>

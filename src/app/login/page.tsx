@@ -50,18 +50,9 @@ function LoginForm() {
     const [schoolSlug, setSchoolSlug] = useState<string | null>(null)
     const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null)
     const [isMainDomain, setIsMainDomain] = useState(false)
-    const [schoolData, setSchoolData] = useState<{ name: string; logo_url?: string } | null>(null)
-    const [portalSettings, setPortalSettings] = useState<{
-        show_admin_login: boolean
-        show_teacher_login: boolean
-        show_parent_login: boolean
-        show_student_login: boolean
-        primary_color: string
-        secondary_color: string
-    } | null>(null)
 
     // Role options for school portal (no super_admin)
-    const allSchoolRoles: RoleOption[] = [
+    const schoolRoles: RoleOption[] = [
         {
             id: 'school_admin',
             label: 'Admin',
@@ -92,18 +83,6 @@ function LoginForm() {
         },
     ]
 
-    // Filter roles based on portal settings
-    const schoolRoles = allSchoolRoles.filter(role => {
-        if (!portalSettings) return true // Show all by default
-        switch (role.id) {
-            case 'school_admin': return portalSettings.show_admin_login
-            case 'teacher': return portalSettings.show_teacher_login
-            case 'parent': return portalSettings.show_parent_login
-            case 'student': return portalSettings.show_student_login
-            default: return true
-        }
-    })
-
     useEffect(() => {
         // Redirect if already logged in
         if (isAuthenticated && user) {
@@ -124,7 +103,6 @@ function LoginForm() {
             const isMain = hostname === 'localhost' ||
                 hostname === mainDomain.split(':')[0] ||
                 hostname.startsWith('www.') ||
-                hostname.endsWith('.app.github.dev') || // Codespaces preview URLs
                 !hostname.includes('.')
 
             if (isMain) {
@@ -132,16 +110,11 @@ function LoginForm() {
                 setSchoolSlug(null)
                 setSelectedRole('super_admin')
             } else {
-                // Extract subdomain for real tenant hosts (e.g., citygrammar.schoolerp.pk)
+                // Extract subdomain
                 const parts = hostname.split('.')
-                if (parts.length >= 3 && parts[0] !== 'www') {
+                if (parts.length >= 2 && parts[0] !== 'www') {
                     setSchoolSlug(parts[0])
                     setIsMainDomain(false)
-                } else {
-                    // Default to main domain
-                    setIsMainDomain(true)
-                    setSchoolSlug(null)
-                    setSelectedRole('super_admin')
                 }
             }
 
@@ -153,26 +126,6 @@ function LoginForm() {
             }
         }
     }, [searchParams])
-
-    // Fetch school data and portal settings when we have a school slug
-    useEffect(() => {
-        const fetchSchoolSettings = async () => {
-            if (!schoolSlug) return
-
-            try {
-                const response = await fetch(`/api/schools/portal-settings?slug=${schoolSlug}`)
-                if (response.ok) {
-                    const data = await response.json()
-                    setSchoolData(data.school)
-                    setPortalSettings(data.settings)
-                }
-            } catch (error) {
-                console.error('Error fetching school settings:', error)
-            }
-        }
-
-        fetchSchoolSettings()
-    }, [schoolSlug])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -337,24 +290,16 @@ function LoginForm() {
         )
     }
 
-    // Get display name for school
-    const schoolDisplayName = schoolData?.name || schoolSlug || 'School'
-    const primaryColor = portalSettings?.primary_color || '#3b82f6'
-    const secondaryColor = portalSettings?.secondary_color || '#06b6d4'
-
     // School Portal Login Page (Subdomain)
     return (
         <div className="min-h-screen flex">
             {/* Left Branding Panel */}
-            <div 
-                className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between text-white relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-            >
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-blue-600 to-cyan-600 p-12 flex-col justify-between text-white relative overflow-hidden">
                 {/* Animated background */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse" />
                     <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-                    <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-white/20 rounded-full blur-3xl" />
+                    <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
                 </div>
 
                 <div className="flex items-center gap-3 relative z-10">
@@ -362,7 +307,7 @@ function LoginForm() {
                         <GraduationCap className="h-8 w-8" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">{schoolDisplayName}</h1>
+                        <h1 className="text-2xl font-bold capitalize">{schoolSlug || 'School'}</h1>
                         <p className="text-sm text-white/70">Management Portal</p>
                     </div>
                 </div>
@@ -370,14 +315,14 @@ function LoginForm() {
                 <div className="space-y-6 relative z-10">
                     <h2 className="text-5xl font-bold leading-tight">
                         Welcome to<br />
-                        <span>{schoolDisplayName}</span>
+                        <span className="capitalize">{schoolSlug || 'Your School'}</span>
                     </h2>
                     <p className="text-lg text-white/80 max-w-md">
                         Access your personalized dashboard to manage academics, attendance, fees, and more.
                     </p>
                 </div>
 
-                <div className="text-sm opacity-60 relative z-10">© {new Date().getFullYear()} Powered by SchoolERP.pk</div>
+                <div className="text-sm opacity-60 relative z-10">© 2024 School ERP Platform</div>
             </div>
 
             {/* Login Form Panel */}
@@ -385,13 +330,10 @@ function LoginForm() {
                 <div className="w-full max-w-lg space-y-6">
                     {/* Mobile header */}
                     <div className="lg:hidden text-center mb-6">
-                        <div 
-                            className="h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
-                            style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-                        >
+                        <div className="h-16 w-16 bg-gradient-to-br from-primary to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                             <GraduationCap className="h-9 w-9 text-white" />
                         </div>
-                        <h1 className="text-2xl font-bold">{schoolDisplayName} Portal</h1>
+                        <h1 className="text-2xl font-bold capitalize">{schoolSlug || 'School'} Portal</h1>
                     </div>
 
                     {!selectedRole ? (

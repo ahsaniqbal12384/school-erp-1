@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, User, Settings, LogOut, Shield } from 'lucide-react'
+import { Bell, Search, User, Settings, LogOut, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -15,9 +15,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { MobileSidebar } from '@/components/layout/sidebar'
-import { NotificationBell } from '@/components/layout/notification-bell'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth/context'
 import { useRouter } from 'next/navigation'
+
+interface Notification {
+    id: string
+    title: string
+    message: string
+    type: 'info' | 'warning' | 'success'
+    read: boolean
+    createdAt: Date
+}
 
 interface HeaderProps {
     role: 'super_admin' | 'school_admin' | 'teacher' | 'parent' | 'student' | 'accountant' | 'librarian' | 'transport_manager'
@@ -32,6 +41,44 @@ interface HeaderProps {
 export function Header({ role, user, schoolName }: HeaderProps) {
     const router = useRouter()
     const { logout } = useAuth()
+    const [notifications, setNotifications] = useState<Notification[]>([
+        {
+            id: '1',
+            title: 'New admission inquiry',
+            message: 'Muhammad Ali inquired about Class 5 admission',
+            type: 'info',
+            read: false,
+            createdAt: new Date(Date.now() - 2 * 60 * 1000),
+        },
+        {
+            id: '2',
+            title: 'Fee payment received',
+            message: 'Rs. 15,000 received via JazzCash',
+            type: 'success',
+            read: false,
+            createdAt: new Date(Date.now() - 15 * 60 * 1000),
+        },
+        {
+            id: '3',
+            title: 'Attendance alert',
+            message: 'Class 8-A has low attendance today (65%)',
+            type: 'warning',
+            read: false,
+            createdAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+    ])
+
+    const unreadCount = notifications.filter(n => !n.read).length
+
+    const markAsRead = (id: string) => {
+        setNotifications(prev =>
+            prev.map(n => n.id === id ? { ...n, read: true } : n)
+        )
+    }
+
+    const markAllAsRead = () => {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    }
 
     const handleLogout = async () => {
         await logout()
@@ -64,6 +111,22 @@ export function Header({ role, user, schoolName }: HeaderProps) {
 
     const handleSystemSettings = () => {
         router.push('/super-admin/settings')
+    }
+
+    const formatTimeAgo = (date: Date) => {
+        const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
+        if (minutes < 60) return `${minutes} minutes ago`
+        const hours = Math.floor(minutes / 60)
+        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
+        return `${Math.floor(hours / 24)} day${hours >= 48 ? 's' : ''} ago`
+    }
+
+    const getNotificationColor = (type: string) => {
+        switch (type) {
+            case 'warning': return 'bg-amber-500'
+            case 'success': return 'bg-emerald-500'
+            default: return 'bg-primary'
+        }
     }
 
     const initials = user?.name
@@ -108,7 +171,72 @@ export function Header({ role, user, schoolName }: HeaderProps) {
                 <ThemeToggle />
 
                 {/* Notifications */}
-                <NotificationBell />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                            <Bell className="h-4 w-4" />
+                            {unreadCount > 0 && (
+                                <Badge
+                                    variant="destructive"
+                                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+                                >
+                                    {unreadCount}
+                                </Badge>
+                            )}
+                            <span className="sr-only">Notifications</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                        <DropdownMenuLabel className="flex items-center justify-between">
+                            <span>Notifications</span>
+                            {unreadCount > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs text-primary h-auto p-1"
+                                    onClick={markAllAsRead}
+                                >
+                                    Mark all read
+                                </Button>
+                            )}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <div className="max-h-80 overflow-y-auto">
+                            {notifications.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                    No notifications
+                                </div>
+                            ) : (
+                                notifications.map((notification) => (
+                                    <DropdownMenuItem
+                                        key={notification.id}
+                                        className="flex flex-col items-start gap-1 p-3 cursor-pointer"
+                                        onClick={() => markAsRead(notification.id)}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {!notification.read && (
+                                                <div className={`h-2 w-2 rounded-full ${getNotificationColor(notification.type)}`} />
+                                            )}
+                                            <span className={`text-sm font-medium ${notification.read ? 'text-muted-foreground' : ''}`}>
+                                                {notification.title}
+                                            </span>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground pl-4">
+                                            {notification.message}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground pl-4">
+                                            {formatTimeAgo(notification.createdAt)}
+                                        </span>
+                                    </DropdownMenuItem>
+                                ))
+                            )}
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="w-full justify-center text-primary">
+                            View all notifications
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* User Menu */}
                 <DropdownMenu>

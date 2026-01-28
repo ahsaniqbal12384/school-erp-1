@@ -14,11 +14,8 @@ import {
     Phone,
     Route,
     Fuel,
-    Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
-import { useState } from 'react'
 
 const stats = [
     {
@@ -71,21 +68,6 @@ const drivers = [
 ]
 
 export default function TransportDashboard() {
-    const [isNotifying, setIsNotifying] = useState(false)
-
-    const handleNotifyParents = () => {
-        setIsNotifying(true)
-        setTimeout(() => {
-            setIsNotifying(false)
-            toast.success('30 parents notified about Route 5 delay via SMS')
-        }, 1500)
-    }
-
-    const handleCallDriver = (name: string, phone: string) => {
-        window.open(`tel:${phone.replace(/[^0-9+]/g, '')}`, '_self')
-        toast.info(`Calling ${name}...`)
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -142,10 +124,7 @@ export default function TransportDashboard() {
                                 Bus-05 is running 15 minutes behind schedule due to traffic
                             </p>
                         </div>
-                        <Button variant="outline" onClick={handleNotifyParents} disabled={isNotifying}>
-                            {isNotifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {isNotifying ? 'Sending...' : 'Notify Parents'}
-                        </Button>
+                        <Button variant="outline">Notify Parents</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -233,7 +212,7 @@ export default function TransportDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="ghost" onClick={() => handleCallDriver(driver.name, driver.phone)}>
+                                        <Button size="sm" variant="ghost">
                                             <Phone className="h-4 w-4" />
                                         </Button>
                                         {driver.status === 'on-duty' ? (

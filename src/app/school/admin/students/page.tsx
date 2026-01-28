@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
     Table,
@@ -19,19 +18,8 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
-    DialogFooter,
+    DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import {
     Select,
     SelectContent,
@@ -51,7 +39,6 @@ import {
     Phone,
     Mail,
     Download,
-    Loader2,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -59,7 +46,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
 
 interface Student {
     id: string
@@ -89,29 +75,10 @@ const sampleStudents: Student[] = [
 ]
 
 export default function StudentsPage() {
-    const [students, setStudents] = useState<Student[]>(sampleStudents)
+    const [students] = useState<Student[]>(sampleStudents)
     const [searchQuery, setSearchQuery] = useState('')
     const [classFilter, setClassFilter] = useState<string>('all')
     const [statusFilter, setStatusFilter] = useState<string>('all')
-    
-    // Dialog states
-    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
-    
-    // Form state
-    const [formData, setFormData] = useState({
-        name: '',
-        fatherName: '',
-        class: 'Class 10',
-        section: 'A',
-        gender: 'male' as 'male' | 'female',
-        phone: '',
-        email: '',
-    })
 
     const filteredStudents = students.filter((student) => {
         const matchesSearch =
@@ -139,132 +106,6 @@ export default function StudentsPage() {
         }
     }
 
-    const resetForm = () => {
-        setFormData({
-            name: '',
-            fatherName: '',
-            class: 'Class 10',
-            section: 'A',
-            gender: 'male',
-            phone: '',
-            email: '',
-        })
-    }
-
-    const handleExport = () => {
-        setIsLoading(true)
-        // Create CSV content
-        const headers = ['Roll No', 'Name', 'Father Name', 'Class', 'Section', 'Gender', 'Phone', 'Email', 'Status', 'Admission Date']
-        const csvContent = [
-            headers.join(','),
-            ...filteredStudents.map(s => 
-                [s.rollNo, s.name, s.fatherName, s.class, s.section, s.gender, s.phone, s.email || '', s.status, s.admissionDate].join(',')
-            )
-        ].join('\n')
-        
-        // Download CSV
-        const blob = new Blob([csvContent], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `students_export_${new Date().toISOString().split('T')[0]}.csv`
-        a.click()
-        window.URL.revokeObjectURL(url)
-        
-        setIsLoading(false)
-        toast.success('Students data exported successfully')
-    }
-
-    const handleAddStudent = () => {
-        if (!formData.name || !formData.fatherName || !formData.phone) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-        
-        setIsLoading(true)
-        // Generate new roll number
-        const maxRoll = Math.max(...students.map(s => parseInt(s.rollNo)))
-        const newStudent: Student = {
-            id: String(students.length + 1),
-            rollNo: String(maxRoll + 1),
-            name: formData.name,
-            fatherName: formData.fatherName,
-            class: formData.class,
-            section: formData.section,
-            gender: formData.gender,
-            phone: formData.phone,
-            email: formData.email || undefined,
-            status: 'active',
-            admissionDate: new Date().toISOString().split('T')[0],
-        }
-        
-        setTimeout(() => {
-            setStudents([...students, newStudent])
-            setIsAddDialogOpen(false)
-            resetForm()
-            setIsLoading(false)
-            toast.success(`Student ${newStudent.name} added successfully`)
-        }, 500)
-    }
-
-    const handleEditStudent = () => {
-        if (!selectedStudent || !formData.name || !formData.fatherName || !formData.phone) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-        
-        setIsLoading(true)
-        setTimeout(() => {
-            setStudents(students.map(s => 
-                s.id === selectedStudent.id 
-                    ? { ...s, ...formData, email: formData.email || undefined }
-                    : s
-            ))
-            setIsEditDialogOpen(false)
-            setSelectedStudent(null)
-            resetForm()
-            setIsLoading(false)
-            toast.success('Student updated successfully')
-        }, 500)
-    }
-
-    const handleDeleteStudent = () => {
-        if (!selectedStudent) return
-        
-        setIsLoading(true)
-        setTimeout(() => {
-            setStudents(students.filter(s => s.id !== selectedStudent.id))
-            setIsDeleteDialogOpen(false)
-            setSelectedStudent(null)
-            setIsLoading(false)
-            toast.success('Student deleted successfully')
-        }, 500)
-    }
-
-    const openViewDialog = (student: Student) => {
-        setSelectedStudent(student)
-        setIsViewDialogOpen(true)
-    }
-
-    const openEditDialog = (student: Student) => {
-        setSelectedStudent(student)
-        setFormData({
-            name: student.name,
-            fatherName: student.fatherName,
-            class: student.class,
-            section: student.section,
-            gender: student.gender,
-            phone: student.phone,
-            email: student.email || '',
-        })
-        setIsEditDialogOpen(true)
-    }
-
-    const openDeleteDialog = (student: Student) => {
-        setSelectedStudent(student)
-        setIsDeleteDialogOpen(true)
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -275,11 +116,11 @@ export default function StudentsPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    <Button variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <Button className="gradient-primary" onClick={() => { resetForm(); setIsAddDialogOpen(true) }}>
+                    <Button className="gradient-primary">
                         <Plus className="mr-2 h-4 w-4" />
                         Add Student
                     </Button>
@@ -315,7 +156,7 @@ export default function StudentsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-500">{maleStudents}</div>
-                        <p className="text-xs text-muted-foreground">{totalStudents > 0 ? ((maleStudents / totalStudents) * 100).toFixed(0) : 0}% of total</p>
+                        <p className="text-xs text-muted-foreground">{((maleStudents / totalStudents) * 100).toFixed(0)}% of total</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
@@ -325,7 +166,7 @@ export default function StudentsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-pink-500">{femaleStudents}</div>
-                        <p className="text-xs text-muted-foreground">{totalStudents > 0 ? ((femaleStudents / totalStudents) * 100).toFixed(0) : 0}% of total</p>
+                        <p className="text-xs text-muted-foreground">{((femaleStudents / totalStudents) * 100).toFixed(0)}% of total</p>
                     </CardContent>
                 </Card>
             </div>
@@ -377,7 +218,7 @@ export default function StudentsPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <GraduationCap className="h-5 w-5" />
-                        Student Records ({filteredStudents.length})
+                        Student Records
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -399,8 +240,10 @@ export default function StudentsPage() {
                                     <TableCell className="font-medium">{student.rollNo}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${student.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'}`}>
-                                                <GraduationCap className={`h-4 w-4 ${student.gender === 'male' ? 'text-blue-500' : 'text-pink-500'}`} />
+                                            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${student.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'
+                                                }`}>
+                                                <GraduationCap className={`h-4 w-4 ${student.gender === 'male' ? 'text-blue-500' : 'text-pink-500'
+                                                    }`} />
                                             </div>
                                             <span>{student.name}</span>
                                         </div>
@@ -432,15 +275,15 @@ export default function StudentsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openViewDialog(student)}>
+                                                <DropdownMenuItem>
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Profile
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openEditDialog(student)}>
+                                                <DropdownMenuItem>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500" onClick={() => openDeleteDialog(student)}>
+                                                <DropdownMenuItem className="text-red-500">
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -449,263 +292,10 @@ export default function StudentsPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {filteredStudents.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                        No students found matching your criteria
-                                    </TableCell>
-                                </TableRow>
-                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Add Student Dialog */}
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Add New Student</DialogTitle>
-                        <DialogDescription>Enter student information below</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Student Name *</Label>
-                            <Input 
-                                value={formData.name} 
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Enter student name"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Father&apos;s Name *</Label>
-                            <Input 
-                                value={formData.fatherName} 
-                                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-                                placeholder="Enter father's name"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Class</Label>
-                                <Select value={formData.class} onValueChange={(v) => setFormData({ ...formData, class: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Class 10">Class 10</SelectItem>
-                                        <SelectItem value="Class 9">Class 9</SelectItem>
-                                        <SelectItem value="Class 8">Class 8</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Section</Label>
-                                <Select value={formData.section} onValueChange={(v) => setFormData({ ...formData, section: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="A">A</SelectItem>
-                                        <SelectItem value="B">B</SelectItem>
-                                        <SelectItem value="C">C</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Gender</Label>
-                            <Select value={formData.gender} onValueChange={(v: 'male' | 'female') => setFormData({ ...formData, gender: v })}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="male">Male</SelectItem>
-                                    <SelectItem value="female">Female</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Phone Number *</Label>
-                            <Input 
-                                value={formData.phone} 
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+92-300-1234567"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Email (Optional)</Label>
-                            <Input 
-                                type="email"
-                                value={formData.email} 
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="student@email.com"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleAddStudent} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                            Add Student
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Student Dialog */}
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Student Profile</DialogTitle>
-                    </DialogHeader>
-                    {selectedStudent && (
-                        <div className="space-y-4 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${selectedStudent.gender === 'male' ? 'bg-blue-500/10' : 'bg-pink-500/10'}`}>
-                                    <GraduationCap className={`h-8 w-8 ${selectedStudent.gender === 'male' ? 'text-blue-500' : 'text-pink-500'}`} />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold">{selectedStudent.name}</h3>
-                                    <p className="text-sm text-muted-foreground">Roll No: {selectedStudent.rollNo}</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Father&apos;s Name</p>
-                                    <p className="font-medium">{selectedStudent.fatherName}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Class</p>
-                                    <p className="font-medium">{selectedStudent.class} - {selectedStudent.section}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Gender</p>
-                                    <p className="font-medium capitalize">{selectedStudent.gender}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Status</p>
-                                    {getStatusBadge(selectedStudent.status)}
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Phone</p>
-                                    <p className="font-medium">{selectedStudent.phone}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Email</p>
-                                    <p className="font-medium">{selectedStudent.email || 'N/A'}</p>
-                                </div>
-                                <div className="col-span-2">
-                                    <p className="text-sm text-muted-foreground">Admission Date</p>
-                                    <p className="font-medium">{selectedStudent.admissionDate}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-                        <Button onClick={() => { setIsViewDialogOpen(false); selectedStudent && openEditDialog(selectedStudent) }}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Student
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Edit Student Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Edit Student</DialogTitle>
-                        <DialogDescription>Update student information</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Student Name *</Label>
-                            <Input 
-                                value={formData.name} 
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Father&apos;s Name *</Label>
-                            <Input 
-                                value={formData.fatherName} 
-                                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Class</Label>
-                                <Select value={formData.class} onValueChange={(v) => setFormData({ ...formData, class: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Class 10">Class 10</SelectItem>
-                                        <SelectItem value="Class 9">Class 9</SelectItem>
-                                        <SelectItem value="Class 8">Class 8</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Section</Label>
-                                <Select value={formData.section} onValueChange={(v) => setFormData({ ...formData, section: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="A">A</SelectItem>
-                                        <SelectItem value="B">B</SelectItem>
-                                        <SelectItem value="C">C</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Gender</Label>
-                            <Select value={formData.gender} onValueChange={(v: 'male' | 'female') => setFormData({ ...formData, gender: v })}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="male">Male</SelectItem>
-                                    <SelectItem value="female">Female</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Phone Number *</Label>
-                            <Input 
-                                value={formData.phone} 
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Email (Optional)</Label>
-                            <Input 
-                                type="email"
-                                value={formData.email} 
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleEditStudent} disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Student</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete <strong>{selectedStudent?.name}</strong>? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteStudent} className="bg-red-500 hover:bg-red-600">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     )
 }

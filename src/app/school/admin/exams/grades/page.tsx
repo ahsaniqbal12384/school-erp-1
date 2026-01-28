@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,288 +29,80 @@ import {
     TrendingUp,
     Award,
     BookOpen,
-    Loader2,
-    FileSpreadsheet,
 } from 'lucide-react'
-import { useTenant } from '@/lib/tenant'
-import { useAuth } from '@/lib/auth'
-import { toast } from 'sonner'
 
-interface Student {
+interface StudentGrade {
     id: string
-    first_name: string
-    last_name: string
-    roll_number: string
-}
-
-interface ExamOption {
-    id: string
+    rollNo: string
     name: string
-    exam_type: string
-    status: string
+    math: number | null
+    english: number | null
+    physics: number | null
+    chemistry: number | null
+    urdu: number | null
+    islamiat: number | null
+    total: number
+    percentage: number
+    grade: string
+    rank: number
 }
 
-interface ClassOption {
-    id: string
-    name: string
-    section: string
-}
+const sampleGrades: StudentGrade[] = [
+    { id: '1', rollNo: '1001', name: 'Ahmed Khan', math: 88, english: 82, physics: 85, chemistry: 78, urdu: 90, islamiat: 92, total: 515, percentage: 85.8, grade: 'A', rank: 5 },
+    { id: '2', rollNo: '1002', name: 'Fatima Ali', math: 95, english: 92, physics: 88, chemistry: 90, urdu: 94, islamiat: 96, total: 555, percentage: 92.5, grade: 'A+', rank: 2 },
+    { id: '3', rollNo: '1003', name: 'Hassan Raza', math: 72, english: 68, physics: 70, chemistry: 65, urdu: 75, islamiat: 80, total: 430, percentage: 71.7, grade: 'B', rank: 12 },
+    { id: '4', rollNo: '1004', name: 'Sara Ahmed', math: 90, english: 88, physics: 92, chemistry: 85, urdu: 88, islamiat: 90, total: 533, percentage: 88.8, grade: 'A', rank: 4 },
+    { id: '5', rollNo: '1005', name: 'Usman Tariq', math: 78, english: 75, physics: 80, chemistry: 72, urdu: 82, islamiat: 85, total: 472, percentage: 78.7, grade: 'B+', rank: 8 },
+    { id: '6', rollNo: '1006', name: 'Ayesha Malik', math: 98, english: 95, physics: 96, chemistry: 94, urdu: 97, islamiat: 98, total: 578, percentage: 96.3, grade: 'A+', rank: 1 },
+    { id: '7', rollNo: '1007', name: 'Ali Hassan', math: 75, english: 72, physics: 78, chemistry: 70, urdu: 80, islamiat: 82, total: 457, percentage: 76.2, grade: 'B+', rank: 10 },
+    { id: '8', rollNo: '1008', name: 'Zainab Shah', math: 92, english: 90, physics: 88, chemistry: 85, urdu: 92, islamiat: 94, total: 541, percentage: 90.2, grade: 'A+', rank: 3 },
+]
 
-interface SubjectOption {
-    id: string
-    name: string
-    code: string
-}
-
-interface GradeEntry {
-    student_id: string
-    marks_obtained: number
-    max_marks: number
-}
-
-export default function GradesEntryPage() {
-    const { school } = useTenant()
-    const { user } = useAuth()
-    const [exams, setExams] = useState<ExamOption[]>([])
-    const [classes, setClasses] = useState<ClassOption[]>([])
-    const [subjects, setSubjects] = useState<SubjectOption[]>([])
-    const [students, setStudents] = useState<Student[]>([])
-    const [grades, setGrades] = useState<Record<string, GradeEntry>>({})
-    const [existingGrades, setExistingGrades] = useState(false)
-
-    const [selectedExam, setSelectedExam] = useState('')
-    const [selectedClass, setSelectedClass] = useState('')
-    const [selectedSubject, setSelectedSubject] = useState('')
-    const [maxMarks, setMaxMarks] = useState('100')
+export default function GradesPage() {
+    const [grades] = useState<StudentGrade[]>(sampleGrades)
+    const [selectedClass, setSelectedClass] = useState<string>('10-A')
+    const [selectedExam, setSelectedExam] = useState<string>('terminal1')
     const [searchQuery, setSearchQuery] = useState('')
 
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-
-    // Fetch initial data
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            if (!school?.id) return
-
-            try {
-                setLoading(true)
-                const [examsRes, classesRes, subjectsRes] = await Promise.all([
-                    fetch(`/api/exams?school_id=${school.id}`),
-                    fetch(`/api/classes?school_id=${school.id}`),
-                    fetch(`/api/subjects?school_id=${school.id}`)
-                ])
-
-                if (examsRes.ok) {
-                    const { data } = await examsRes.json()
-                    setExams(data || [])
-                }
-                if (classesRes.ok) {
-                    const { data } = await classesRes.json()
-                    setClasses(data || [])
-                }
-                if (subjectsRes.ok) {
-                    const { data } = await subjectsRes.json()
-                    setSubjects(data || [])
-                }
-            } catch (error) {
-                console.error('Error fetching initial data:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchInitialData()
-    }, [school?.id])
-
-    // Fetch students when class changes
-    useEffect(() => {
-        const fetchStudents = async () => {
-            if (!school?.id || !selectedClass) {
-                setStudents([])
-                return
-            }
-
-            try {
-                const response = await fetch(`/api/students?school_id=${school.id}&class_id=${selectedClass}`)
-                if (response.ok) {
-                    const { data } = await response.json()
-                    setStudents(data || [])
-
-                    // Initialize grades for all students
-                    const initialGrades: Record<string, GradeEntry> = {}
-                    data?.forEach((student: Student) => {
-                        initialGrades[student.id] = {
-                            student_id: student.id,
-                            marks_obtained: 0,
-                            max_marks: parseInt(maxMarks)
-                        }
-                    })
-                    setGrades(initialGrades)
-                }
-            } catch (error) {
-                console.error('Error fetching students:', error)
-            }
-        }
-
-        fetchStudents()
-    }, [school?.id, selectedClass, maxMarks])
-
-    // Fetch existing grades when exam, class, and subject are selected
-    const fetchExistingGrades = useCallback(async () => {
-        if (!school?.id || !selectedExam || !selectedClass || !selectedSubject) return
-
-        try {
-            const response = await fetch(
-                `/api/exams/results?school_id=${school.id}&exam_id=${selectedExam}&class_id=${selectedClass}&subject_id=${selectedSubject}`
-            )
-
-            if (response.ok) {
-                const { data } = await response.json()
-                if (data?.length > 0) {
-                    setExistingGrades(true)
-                    const existingRecords: Record<string, GradeEntry> = {}
-                    data.forEach((record: { student_id: string; marks_obtained: number; max_marks: number }) => {
-                        existingRecords[record.student_id] = {
-                            student_id: record.student_id,
-                            marks_obtained: record.marks_obtained,
-                            max_marks: record.max_marks
-                        }
-                    })
-                    setGrades(prev => ({ ...prev, ...existingRecords }))
-                    if (data[0]?.max_marks) {
-                        setMaxMarks(String(data[0].max_marks))
-                    }
-                } else {
-                    setExistingGrades(false)
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching existing grades:', error)
-        }
-    }, [school?.id, selectedExam, selectedClass, selectedSubject])
-
-    useEffect(() => {
-        fetchExistingGrades()
-    }, [fetchExistingGrades])
-
-    const updateMarks = (studentId: string, marks: string) => {
-        const numMarks = parseInt(marks) || 0
-        setGrades(prev => ({
-            ...prev,
-            [studentId]: {
-                ...prev[studentId],
-                student_id: studentId,
-                marks_obtained: numMarks,
-                max_marks: parseInt(maxMarks)
-            }
-        }))
-    }
-
-    const saveGrades = async () => {
-        if (!selectedExam || !selectedClass || !selectedSubject) {
-            toast.error('Please select exam, class, and subject')
-            return
-        }
-
-        setSaving(true)
-        try {
-            const results = Object.values(grades).map(g => ({
-                student_id: g.student_id,
-                marks_obtained: g.marks_obtained,
-                max_marks: parseInt(maxMarks)
-            }))
-
-            const response = await fetch('/api/exams/results', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    school_id: school?.id,
-                    exam_id: selectedExam,
-                    class_id: selectedClass,
-                    subject_id: selectedSubject,
-                    results,
-                    entered_by: user?.id
-                })
-            })
-
-            if (!response.ok) throw new Error('Failed to save grades')
-
-            const { count } = await response.json()
-            toast.success(`Grades saved for ${count} students!`)
-            setExistingGrades(true)
-        } catch (error) {
-            console.error('Error saving grades:', error)
-            toast.error('Failed to save grades')
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    const filteredStudents = students.filter((student) =>
-        `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.roll_number?.includes(searchQuery)
+    const filteredGrades = grades.filter((student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.rollNo.includes(searchQuery)
     )
 
-    const getGrade = (marks: number, max: number) => {
-        const percentage = (marks / max) * 100
-        if (percentage >= 90) return { grade: 'A+', color: 'text-green-500' }
-        if (percentage >= 80) return { grade: 'A', color: 'text-green-500' }
-        if (percentage >= 70) return { grade: 'B', color: 'text-blue-500' }
-        if (percentage >= 60) return { grade: 'C', color: 'text-yellow-500' }
-        if (percentage >= 50) return { grade: 'D', color: 'text-orange-500' }
-        if (percentage >= 33) return { grade: 'E', color: 'text-red-400' }
-        return { grade: 'F', color: 'text-red-500' }
-    }
+    const classAverage = Math.round(grades.reduce((acc, s) => acc + s.percentage, 0) / grades.length)
+    const topPerformer = grades.reduce((a, b) => (a.total > b.total ? a : b))
+    const aGradeCount = grades.filter((s) => s.grade.startsWith('A')).length
 
-    // Calculate stats
-    const totalStudents = students.length
-    const enteredCount = Object.values(grades).filter(g => g.marks_obtained > 0).length
-    const avgMarks = totalStudents > 0
-        ? (Object.values(grades).reduce((sum, g) => sum + g.marks_obtained, 0) / totalStudents).toFixed(1)
-        : 0
-    const passCount = Object.values(grades).filter(g => (g.marks_obtained / parseInt(maxMarks)) * 100 >= 33).length
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
+    const getGradeBadge = (grade: string) => {
+        if (grade === 'A+') return <Badge className="bg-green-500 text-white">A+</Badge>
+        if (grade === 'A') return <Badge className="bg-blue-500 text-white">A</Badge>
+        if (grade === 'B+') return <Badge className="bg-yellow-500 text-white">B+</Badge>
+        if (grade === 'B') return <Badge className="bg-orange-500 text-white">B</Badge>
+        return <Badge variant="outline">{grade}</Badge>
     }
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Enter Grades</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Gradebook</h1>
                     <p className="text-muted-foreground">
-                        Enter and manage student exam results
+                        View and manage student grades for exams
                     </p>
                 </div>
                 <div className="flex gap-3">
                     <Button variant="outline">
                         <Download className="mr-2 h-4 w-4" />
-                        Export
+                        Export Grades
                     </Button>
-                    <Button className="gradient-primary" onClick={saveGrades} disabled={saving || !selectedSubject}>
-                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save Grades
+                    <Button className="gradient-primary">
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
                     </Button>
                 </div>
             </div>
 
-            {existingGrades && (
-                <Card className="border-blue-500/50 bg-blue-500/5">
-                    <CardContent className="py-3">
-                        <div className="flex items-center gap-2 text-blue-600">
-                            <FileSpreadsheet className="h-4 w-4" />
-                            <span className="text-sm">Existing grades loaded. Saving will update the records.</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Stats */}
+            {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="card-hover">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -318,38 +110,38 @@ export default function GradesEntryPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalStudents}</div>
-                        <p className="text-xs text-muted-foreground">In selected class</p>
+                        <div className="text-2xl font-bold">{grades.length}</div>
+                        <p className="text-xs text-muted-foreground">In this class</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Entered</CardTitle>
-                        <ClipboardList className="h-4 w-4 text-blue-500" />
+                        <CardTitle className="text-sm font-medium">Class Average</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-500">{enteredCount}</div>
-                        <p className="text-xs text-muted-foreground">{totalStudents > 0 ? ((enteredCount / totalStudents) * 100).toFixed(0) : 0}% complete</p>
+                        <div className="text-2xl font-bold">{classAverage}%</div>
+                        <p className="text-xs text-muted-foreground">Overall performance</p>
                     </CardContent>
                 </Card>
                 <Card className="card-hover">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Average</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-500">{avgMarks}</div>
-                        <p className="text-xs text-muted-foreground">Out of {maxMarks}</p>
-                    </CardContent>
-                </Card>
-                <Card className="card-hover">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
                         <Award className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-yellow-500">{totalStudents > 0 ? ((passCount / totalStudents) * 100).toFixed(0) : 0}%</div>
-                        <p className="text-xs text-muted-foreground">{passCount} students passed</p>
+                        <div className="text-lg font-bold">{topPerformer.name}</div>
+                        <p className="text-xs text-muted-foreground">{topPerformer.percentage}%</p>
+                    </CardContent>
+                </Card>
+                <Card className="card-hover">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">A Grade Students</CardTitle>
+                        <BookOpen className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-500">{aGradeCount}</div>
+                        <p className="text-xs text-muted-foreground">{((aGradeCount / grades.length) * 100).toFixed(0)}% of class</p>
                     </CardContent>
                 </Card>
             </div>
@@ -357,130 +149,97 @@ export default function GradesEntryPage() {
             {/* Filters */}
             <Card>
                 <CardContent className="pt-6">
-                    <div className="grid gap-4 md:grid-cols-5">
-                        <Select value={selectedExam} onValueChange={setSelectedExam}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Exam" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {exams.map((exam) => (
-                                    <SelectItem key={exam.id} value={exam.id}>
-                                        {exam.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={selectedClass} onValueChange={setSelectedClass}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {classes.map((cls) => (
-                                    <SelectItem key={cls.id} value={cls.id}>
-                                        {cls.name} {cls.section}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Subject" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {subjects.map((subject) => (
-                                    <SelectItem key={subject.id} value={subject.id}>
-                                        {subject.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Input
-                            type="number"
-                            placeholder="Max Marks"
-                            value={maxMarks}
-                            onChange={(e) => setMaxMarks(e.target.value)}
-                        />
-                        <div className="relative">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                        <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search student..."
+                                placeholder="Search students..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9"
                             />
                         </div>
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="Class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10-A">Class 10-A</SelectItem>
+                                <SelectItem value="10-B">Class 10-B</SelectItem>
+                                <SelectItem value="9-A">Class 9-A</SelectItem>
+                                <SelectItem value="9-B">Class 9-B</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedExam} onValueChange={setSelectedExam}>
+                            <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder="Exam" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="terminal1">First Terminal</SelectItem>
+                                <SelectItem value="midterm">Mid-Term</SelectItem>
+                                <SelectItem value="terminal2">Second Terminal</SelectItem>
+                                <SelectItem value="final">Final</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Grades Entry Table */}
+            {/* Grades Table */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5" />
-                        Enter Marks
-                        {selectedSubject && subjects.find(s => s.id === selectedSubject) && (
-                            <Badge variant="outline" className="ml-2">
-                                {subjects.find(s => s.id === selectedSubject)?.name}
-                            </Badge>
-                        )}
+                        <ClipboardList className="h-5 w-5" />
+                        Class 10-A - First Terminal Results
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {!selectedClass || !selectedSubject ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                            <ClipboardList className="h-12 w-12 mb-4 opacity-50" />
-                            <p>Select exam, class, and subject to enter grades</p>
-                        </div>
-                    ) : filteredStudents.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                            <Users className="h-12 w-12 mb-4 opacity-50" />
-                            <p>No students found in this class</p>
-                        </div>
-                    ) : (
+                    <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[100px]">Roll No</TableHead>
+                                    <TableHead className="w-[60px]">Rank</TableHead>
+                                    <TableHead className="w-[80px]">Roll No</TableHead>
                                     <TableHead>Student Name</TableHead>
-                                    <TableHead className="w-[150px]">Marks Obtained</TableHead>
-                                    <TableHead className="w-[100px]">Max Marks</TableHead>
-                                    <TableHead className="w-[100px]">Percentage</TableHead>
-                                    <TableHead className="w-[80px]">Grade</TableHead>
+                                    <TableHead className="text-center">Math<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">English<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">Physics<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">Chemistry<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">Urdu<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">Islamiat<br /><span className="text-xs font-normal">(100)</span></TableHead>
+                                    <TableHead className="text-center">Total<br /><span className="text-xs font-normal">(600)</span></TableHead>
+                                    <TableHead className="text-center">%</TableHead>
+                                    <TableHead className="text-center">Grade</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredStudents.map((student) => {
-                                    const marks = grades[student.id]?.marks_obtained || 0
-                                    const max = parseInt(maxMarks)
-                                    const percentage = max > 0 ? ((marks / max) * 100).toFixed(1) : '0'
-                                    const { grade, color } = getGrade(marks, max)
-
-                                    return (
-                                        <TableRow key={student.id}>
-                                            <TableCell className="font-medium">{student.roll_number}</TableCell>
-                                            <TableCell>{student.first_name} {student.last_name}</TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    max={maxMarks}
-                                                    value={marks || ''}
-                                                    onChange={(e) => updateMarks(student.id, e.target.value)}
-                                                    className="w-[100px]"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">{maxMarks}</TableCell>
-                                            <TableCell>{percentage}%</TableCell>
-                                            <TableCell>
-                                                <Badge className={`${color} bg-opacity-10`}>{grade}</Badge>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
+                                {filteredGrades.sort((a, b) => a.rank - b.rank).map((student) => (
+                                    <TableRow key={student.id}>
+                                        <TableCell className="font-bold text-center">
+                                            {student.rank <= 3 ? (
+                                                <Badge className={student.rank === 1 ? 'bg-yellow-500' : student.rank === 2 ? 'bg-gray-400' : 'bg-orange-400'}>
+                                                    #{student.rank}
+                                                </Badge>
+                                            ) : (
+                                                `#${student.rank}`
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium">{student.rollNo}</TableCell>
+                                        <TableCell>{student.name}</TableCell>
+                                        <TableCell className="text-center">{student.math}</TableCell>
+                                        <TableCell className="text-center">{student.english}</TableCell>
+                                        <TableCell className="text-center">{student.physics}</TableCell>
+                                        <TableCell className="text-center">{student.chemistry}</TableCell>
+                                        <TableCell className="text-center">{student.urdu}</TableCell>
+                                        <TableCell className="text-center">{student.islamiat}</TableCell>
+                                        <TableCell className="text-center font-bold">{student.total}</TableCell>
+                                        <TableCell className="text-center font-medium">{student.percentage.toFixed(1)}%</TableCell>
+                                        <TableCell className="text-center">{getGradeBadge(student.grade)}</TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
-                    )}
+                    </div>
                 </CardContent>
             </Card>
         </div>

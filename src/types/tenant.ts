@@ -7,7 +7,6 @@ export type UserRole =
     | 'accountant'
     | 'librarian'
     | 'transport_manager'
-    | 'staff'
 
 export type SubscriptionPlan = 'basic' | 'standard' | 'premium' | 'enterprise'
 export type SubscriptionStatus = 'active' | 'trial' | 'expired' | 'suspended' | 'cancelled'

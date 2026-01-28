@@ -20,16 +20,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -51,7 +41,6 @@ import {
     Edit,
     Trash2,
     CheckCircle,
-    Loader2,
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -59,7 +48,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from 'sonner'
 
 interface HomeworkAssignment {
     id: string
@@ -130,27 +118,11 @@ const sampleHomework: HomeworkAssignment[] = [
     },
 ]
 
-const emptyFormData = {
-    class: '',
-    section: '',
-    subject: 'Mathematics',
-    title: '',
-    description: '',
-    assignedDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
-}
-
 export default function TeacherHomeworkPage() {
-    const [homework, setHomework] = useState<HomeworkAssignment[]>(sampleHomework)
+    const [homework] = useState<HomeworkAssignment[]>(sampleHomework)
     const [searchQuery, setSearchQuery] = useState('')
     const [classFilter, setClassFilter] = useState<string>('all')
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-    const [selectedHomework, setSelectedHomework] = useState<HomeworkAssignment | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
-    const [formData, setFormData] = useState(emptyFormData)
 
     const filteredHomework = homework.filter((hw) => {
         const matchesSearch =
@@ -162,117 +134,6 @@ export default function TeacherHomeworkPage() {
 
     const activeCount = homework.filter((h) => h.status === 'active').length
     const totalSubmissions = homework.reduce((acc, h) => acc + h.submissions, 0)
-
-    const handleAddHomework = async () => {
-        if (!formData.class || !formData.title || !formData.dueDate) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const classSection = formData.class.split('-')
-            const newHomework: HomeworkAssignment = {
-                id: String(homework.length + 1),
-                class: classSection[0] || 'Class 10',
-                section: classSection[1] || 'A',
-                subject: formData.subject,
-                title: formData.title,
-                description: formData.description,
-                assignedDate: formData.assignedDate,
-                dueDate: formData.dueDate,
-                submissions: 0,
-                totalStudents: 35,
-                status: 'active',
-            }
-
-            setHomework([newHomework, ...homework])
-            setFormData(emptyFormData)
-            setIsAddDialogOpen(false)
-            toast.success('Homework assignment created successfully')
-        } catch {
-            toast.error('Failed to create assignment')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleEditHomework = async () => {
-        if (!selectedHomework || !formData.title || !formData.dueDate) {
-            toast.error('Please fill in all required fields')
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const classSection = formData.class.split('-')
-            setHomework(homework.map(hw =>
-                hw.id === selectedHomework.id
-                    ? {
-                        ...hw,
-                        class: classSection[0] || hw.class,
-                        section: classSection[1] || hw.section,
-                        title: formData.title,
-                        description: formData.description,
-                        dueDate: formData.dueDate,
-                    }
-                    : hw
-            ))
-            setIsEditDialogOpen(false)
-            setSelectedHomework(null)
-            toast.success('Homework assignment updated successfully')
-        } catch {
-            toast.error('Failed to update assignment')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleDeleteHomework = async () => {
-        if (!selectedHomework) return
-
-        setIsLoading(true)
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            setHomework(homework.filter(hw => hw.id !== selectedHomework.id))
-            setIsDeleteDialogOpen(false)
-            setSelectedHomework(null)
-            toast.success('Homework assignment deleted successfully')
-        } catch {
-            toast.error('Failed to delete assignment')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const openEditDialog = (hw: HomeworkAssignment) => {
-        setSelectedHomework(hw)
-        setFormData({
-            class: `${hw.class}-${hw.section}`,
-            section: hw.section,
-            subject: hw.subject,
-            title: hw.title,
-            description: hw.description,
-            assignedDate: hw.assignedDate,
-            dueDate: hw.dueDate,
-        })
-        setIsEditDialogOpen(true)
-    }
-
-    const openViewDialog = (hw: HomeworkAssignment) => {
-        setSelectedHomework(hw)
-        setIsViewDialogOpen(true)
-    }
-
-    const openDeleteDialog = (hw: HomeworkAssignment) => {
-        setSelectedHomework(hw)
-        setIsDeleteDialogOpen(true)
-    }
 
     return (
         <div className="space-y-6">
@@ -297,61 +158,44 @@ export default function TeacherHomeworkPage() {
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Class *</Label>
-                                    <Select
-                                        value={formData.class}
-                                        onValueChange={(value) => setFormData({ ...formData, class: value })}
-                                    >
+                                    <Label>Class</Label>
+                                    <Select>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select class" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Class 10-A">Class 10-A</SelectItem>
-                                            <SelectItem value="Class 10-B">Class 10-B</SelectItem>
-                                            <SelectItem value="Class 9-A">Class 9-A</SelectItem>
-                                            <SelectItem value="Class 9-B">Class 9-B</SelectItem>
-                                            <SelectItem value="Class 8-A">Class 8-A</SelectItem>
+                                            <SelectItem value="10-A">Class 10-A</SelectItem>
+                                            <SelectItem value="10-B">Class 10-B</SelectItem>
+                                            <SelectItem value="9-A">Class 9-A</SelectItem>
+                                            <SelectItem value="9-B">Class 9-B</SelectItem>
+                                            <SelectItem value="8-A">Class 8-A</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Subject</Label>
-                                    <Input value={formData.subject} readOnly />
+                                    <Input defaultValue="Mathematics" readOnly />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Title *</Label>
-                                <Input
-                                    placeholder="Enter homework title"
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                />
+                                <Label>Title</Label>
+                                <Input placeholder="Enter homework title" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Description / Instructions</Label>
                                 <Textarea
                                     placeholder="Provide detailed instructions for students..."
                                     rows={4}
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Assigned Date</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.assignedDate}
-                                        onChange={(e) => setFormData({ ...formData, assignedDate: e.target.value })}
-                                    />
+                                    <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Due Date *</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.dueDate}
-                                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                    />
+                                    <Label>Due Date</Label>
+                                    <Input type="date" />
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -361,24 +205,12 @@ export default function TeacherHomeworkPage() {
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 pt-4">
-                                <Button variant="outline" onClick={() => {
-                                    setIsAddDialogOpen(false)
-                                    setFormData(emptyFormData)
-                                }}>
+                                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                                     Cancel
                                 </Button>
-                                <Button className="gradient-primary" onClick={handleAddHomework} disabled={isLoading}>
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Create Assignment
-                                        </>
-                                    )}
+                                <Button className="gradient-primary" onClick={() => setIsAddDialogOpen(false)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Assignment
                                 </Button>
                             </div>
                         </div>
@@ -531,18 +363,15 @@ export default function TeacherHomeworkPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openViewDialog(hw)}>
+                                                <DropdownMenuItem>
                                                     <Users className="mr-2 h-4 w-4" />
                                                     View Submissions
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openEditDialog(hw)}>
+                                                <DropdownMenuItem>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-red-500"
-                                                    onClick={() => openDeleteDialog(hw)}
-                                                >
+                                                <DropdownMenuItem className="text-red-500">
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -555,184 +384,6 @@ export default function TeacherHomeworkPage() {
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Edit Homework Assignment</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Class *</Label>
-                                <Select
-                                    value={formData.class}
-                                    onValueChange={(value) => setFormData({ ...formData, class: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select class" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Class 10-A">Class 10-A</SelectItem>
-                                        <SelectItem value="Class 10-B">Class 10-B</SelectItem>
-                                        <SelectItem value="Class 9-A">Class 9-A</SelectItem>
-                                        <SelectItem value="Class 9-B">Class 9-B</SelectItem>
-                                        <SelectItem value="Class 8-A">Class 8-A</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Subject</Label>
-                                <Input value={formData.subject} readOnly />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Title *</Label>
-                            <Input
-                                placeholder="Enter homework title"
-                                value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Description / Instructions</Label>
-                            <Textarea
-                                placeholder="Provide detailed instructions for students..."
-                                rows={4}
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Assigned Date</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.assignedDate}
-                                    onChange={(e) => setFormData({ ...formData, assignedDate: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Due Date *</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.dueDate}
-                                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" onClick={() => {
-                                setIsEditDialogOpen(false)
-                                setSelectedHomework(null)
-                            }}>
-                                Cancel
-                            </Button>
-                            <Button className="gradient-primary" onClick={handleEditHomework} disabled={isLoading}>
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Save Changes'
-                                )}
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Submissions Dialog */}
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Submissions - {selectedHomework?.title}</DialogTitle>
-                    </DialogHeader>
-                    {selectedHomework && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                                    <p className="text-2xl font-bold">
-                                        {selectedHomework.submissions}/{selectedHomework.totalStudents}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Completion Rate</p>
-                                    <p className="text-2xl font-bold text-green-500">
-                                        {Math.round((selectedHomework.submissions / selectedHomework.totalStudents) * 100)}%
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="border rounded-lg">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Student</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Submitted On</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {Array.from({ length: 5 }).map((_, i) => (
-                                            <TableRow key={i}>
-                                                <TableCell className="font-medium">Student {i + 1}</TableCell>
-                                                <TableCell>
-                                                    {i < 3 ? (
-                                                        <Badge className="bg-green-500/10 text-green-500">Submitted</Badge>
-                                                    ) : (
-                                                        <Badge variant="outline">Pending</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {i < 3 ? new Date().toLocaleDateString() : '-'}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                            <div className="flex justify-end">
-                                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                                    Close
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Homework Assignment?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{selectedHomework?.title}&quot;? This action cannot be undone
-                            and will remove all associated submissions.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setSelectedHomework(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDeleteHomework}
-                            className="bg-red-500 hover:bg-red-600"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                'Delete'
-                            )}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     )
 }

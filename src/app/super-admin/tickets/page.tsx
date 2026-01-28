@@ -29,7 +29,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { toast } from 'sonner'
 import {
     Ticket,
     Search,
@@ -37,13 +36,18 @@ import {
     CheckCircle,
     AlertCircle,
     XCircle,
+    MoreHorizontal,
     MessageSquare,
     Building2,
     User,
     Calendar,
-    Send,
-    Loader2,
 } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface SupportTicket {
     id: string
@@ -153,15 +157,11 @@ const sampleTickets: SupportTicket[] = [
 ]
 
 export default function TicketsPage() {
-    const [tickets, setTickets] = useState<SupportTicket[]>(sampleTickets)
+    const [tickets] = useState<SupportTicket[]>(sampleTickets)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [priorityFilter, setPriorityFilter] = useState<string>('all')
     const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
-    const [responseText, setResponseText] = useState('')
-    const [assignedTeam, setAssignedTeam] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [dialogOpen, setDialogOpen] = useState(false)
 
     const filteredTickets = tickets.filter((ticket) => {
         const matchesSearch =
@@ -172,49 +172,6 @@ export default function TicketsPage() {
         const matchesPriority = priorityFilter === 'all' || ticket.priority === priorityFilter
         return matchesSearch && matchesStatus && matchesPriority
     })
-
-    const handleCloseTicket = async () => {
-        if (!selectedTicket) return
-        setIsSubmitting(true)
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setTickets(prev => prev.map(t => 
-            t.id === selectedTicket.id ? { ...t, status: 'closed' as const, updatedAt: new Date().toISOString() } : t
-        ))
-        toast.success(`Ticket ${selectedTicket.ticketNo} closed successfully`)
-        setIsSubmitting(false)
-        setDialogOpen(false)
-    }
-
-    const handleSendResponse = async () => {
-        if (!selectedTicket || !responseText.trim()) {
-            toast.error('Please enter a response')
-            return
-        }
-        setIsSubmitting(true)
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setTickets(prev => prev.map(t => 
-            t.id === selectedTicket.id ? { 
-                ...t, 
-                status: 'in-progress' as const, 
-                messages: t.messages + 1,
-                assignedTo: assignedTeam || t.assignedTo,
-                updatedAt: new Date().toISOString() 
-            } : t
-        ))
-        toast.success(`Response sent for ticket ${selectedTicket.ticketNo}`)
-        setResponseText('')
-        setIsSubmitting(false)
-        setDialogOpen(false)
-    }
-
-    const openTicketDialog = (ticket: SupportTicket) => {
-        setSelectedTicket(ticket)
-        setAssignedTeam(ticket.assignedTo || '')
-        setResponseText('')
-        setDialogOpen(true)
-    }
 
     const openCount = tickets.filter((t) => t.status === 'open').length
     const inProgressCount = tickets.filter((t) => t.status === 'in-progress').length
@@ -435,13 +392,72 @@ export default function TicketsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => openTicketDialog(ticket)}
-                                        >
-                                            View
-                                        </Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setSelectedTicket(ticket)}
+                                                >
+                                                    View
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-2xl">
+                                                <DialogHeader>
+                                                    <DialogTitle className="flex items-center gap-2">
+                                                        <span className="text-primary">{ticket.ticketNo}</span>
+                                                        {getPriorityBadge(ticket.priority)}
+                                                        {getStatusBadge(ticket.status)}
+                                                    </DialogTitle>
+                                                </DialogHeader>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <h3 className="font-medium">{ticket.subject}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-1">{ticket.description}</p>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                                                            <span>{ticket.school}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="h-4 w-4 text-muted-foreground" />
+                                                            <span>{ticket.createdBy}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                            <span>Created: {new Date(ticket.createdAt).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                                            <span>Updated: {new Date(ticket.updatedAt).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Assign To</Label>
+                                                        <Select defaultValue={ticket.assignedTo || ''}>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select team" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="tech-support">Tech Support Team</SelectItem>
+                                                                <SelectItem value="admin">Admin Team</SelectItem>
+                                                                <SelectItem value="devops">DevOps Team</SelectItem>
+                                                                <SelectItem value="product">Product Team</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Add Response</Label>
+                                                        <Textarea placeholder="Type your response..." rows={3} />
+                                                    </div>
+                                                    <div className="flex justify-end gap-3">
+                                                        <Button variant="outline">Close Ticket</Button>
+                                                        <Button className="gradient-primary">Send Response</Button>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -449,88 +465,6 @@ export default function TicketsPage() {
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Ticket Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    {selectedTicket && (
-                        <>
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <span className="text-primary">{selectedTicket.ticketNo}</span>
-                                    {getPriorityBadge(selectedTicket.priority)}
-                                    {getStatusBadge(selectedTicket.status)}
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-medium">{selectedTicket.subject}</h3>
-                                    <p className="text-sm text-muted-foreground mt-1">{selectedTicket.description}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                                        <span>{selectedTicket.school}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <User className="h-4 w-4 text-muted-foreground" />
-                                        <span>{selectedTicket.createdBy}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                                        <span>Created: {new Date(selectedTicket.createdAt).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                        <span>Updated: {new Date(selectedTicket.updatedAt).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Assign To</Label>
-                                    <Select value={assignedTeam} onValueChange={setAssignedTeam}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select team" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Tech Support Team">Tech Support Team</SelectItem>
-                                            <SelectItem value="Admin Team">Admin Team</SelectItem>
-                                            <SelectItem value="DevOps Team">DevOps Team</SelectItem>
-                                            <SelectItem value="Product Team">Product Team</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Add Response</Label>
-                                    <Textarea 
-                                        placeholder="Type your response..." 
-                                        rows={3} 
-                                        value={responseText}
-                                        onChange={(e) => setResponseText(e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-3">
-                                    <Button 
-                                        variant="outline" 
-                                        onClick={handleCloseTicket}
-                                        disabled={isSubmitting || selectedTicket.status === 'closed'}
-                                    >
-                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                                        Close Ticket
-                                    </Button>
-                                    <Button 
-                                        className="gradient-primary"
-                                        onClick={handleSendResponse}
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                        Send Response
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

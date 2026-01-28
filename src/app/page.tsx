@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import HomePageWrapper from '@/components/home-page-wrapper'
 import {
   GraduationCap,
   Users,
@@ -26,7 +25,6 @@ import {
 
 export default function HomePage() {
   return (
-    <HomePageWrapper>
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Hero Section */}
       <header className="relative min-h-screen flex flex-col">
@@ -380,7 +378,6 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
-    </HomePageWrapper>
   )
 }
 
