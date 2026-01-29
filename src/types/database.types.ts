@@ -490,6 +490,154 @@ export interface Database {
                 Insert: Omit<Database['public']['Tables']['support_tickets']['Row'], 'id' | 'created_at' | 'updated_at'>
                 Update: Partial<Database['public']['Tables']['support_tickets']['Insert']>
             }
+            // Library Management Tables
+            library_settings: {
+                Row: LibrarySettings
+                Insert: Omit<LibrarySettings, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<LibrarySettings, 'id' | 'created_at' | 'updated_at'>>
+            }
+            book_categories: {
+                Row: BookCategory
+                Insert: Omit<BookCategory, 'id' | 'created_at'>
+                Update: Partial<Omit<BookCategory, 'id' | 'created_at'>>
+            }
+            book_locations: {
+                Row: BookLocation
+                Insert: Omit<BookLocation, 'id' | 'created_at'>
+                Update: Partial<Omit<BookLocation, 'id' | 'created_at'>>
+            }
+            publishers: {
+                Row: Publisher
+                Insert: Omit<Publisher, 'id' | 'created_at'>
+                Update: Partial<Omit<Publisher, 'id' | 'created_at'>>
+            }
+            authors: {
+                Row: Author
+                Insert: Omit<Author, 'id' | 'created_at'>
+                Update: Partial<Omit<Author, 'id' | 'created_at'>>
+            }
+            books: {
+                Row: Book
+                Insert: Omit<Book, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<Book, 'id' | 'created_at' | 'updated_at'>>
+            }
+            book_copies: {
+                Row: BookCopy
+                Insert: Omit<BookCopy, 'id' | 'created_at'>
+                Update: Partial<Omit<BookCopy, 'id' | 'created_at'>>
+            }
+            library_members: {
+                Row: LibraryMember
+                Insert: Omit<LibraryMember, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<LibraryMember, 'id' | 'created_at' | 'updated_at'>>
+            }
+            book_issues: {
+                Row: BookIssue
+                Insert: Omit<BookIssue, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<BookIssue, 'id' | 'created_at' | 'updated_at'>>
+            }
+            book_reservations: {
+                Row: BookReservation
+                Insert: Omit<BookReservation, 'id' | 'created_at'>
+                Update: Partial<Omit<BookReservation, 'id' | 'created_at'>>
+            }
+            library_fines: {
+                Row: LibraryFine
+                Insert: Omit<LibraryFine, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<LibraryFine, 'id' | 'created_at' | 'updated_at'>>
+            }
+            fine_payments: {
+                Row: FinePayment
+                Insert: Omit<FinePayment, 'id' | 'created_at'>
+                Update: Partial<Omit<FinePayment, 'id' | 'created_at'>>
+            }
+            // Staff/HR Management Tables
+            staff_departments: {
+                Row: StaffDepartment
+                Insert: Omit<StaffDepartment, 'id' | 'created_at'>
+                Update: Partial<Omit<StaffDepartment, 'id' | 'created_at'>>
+            }
+            staff_designations: {
+                Row: StaffDesignation
+                Insert: Omit<StaffDesignation, 'id' | 'created_at'>
+                Update: Partial<Omit<StaffDesignation, 'id' | 'created_at'>>
+            }
+            leave_types: {
+                Row: LeaveTypeConfig
+                Insert: Omit<LeaveTypeConfig, 'id' | 'created_at'>
+                Update: Partial<Omit<LeaveTypeConfig, 'id' | 'created_at'>>
+            }
+            staff_leave_balance: {
+                Row: StaffLeaveBalance
+                Insert: Omit<StaffLeaveBalance, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<StaffLeaveBalance, 'id' | 'created_at' | 'updated_at'>>
+            }
+            leave_applications: {
+                Row: LeaveApplication
+                Insert: Omit<LeaveApplication, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<LeaveApplication, 'id' | 'created_at' | 'updated_at'>>
+            }
+            salary_components: {
+                Row: SalaryComponent
+                Insert: Omit<SalaryComponent, 'id' | 'created_at'>
+                Update: Partial<Omit<SalaryComponent, 'id' | 'created_at'>>
+            }
+            staff_salary_structure: {
+                Row: StaffSalaryStructure
+                Insert: Omit<StaffSalaryStructure, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<StaffSalaryStructure, 'id' | 'created_at' | 'updated_at'>>
+            }
+            payroll: {
+                Row: Payroll
+                Insert: Omit<Payroll, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<Payroll, 'id' | 'created_at' | 'updated_at'>>
+            }
+            payroll_transactions: {
+                Row: PayrollTransaction
+                Insert: Omit<PayrollTransaction, 'id' | 'created_at'>
+                Update: Partial<Omit<PayrollTransaction, 'id' | 'created_at'>>
+            }
+            // Reports & Analytics Tables
+            report_types: {
+                Row: ReportType
+                Insert: Omit<ReportType, 'id' | 'created_at'>
+                Update: Partial<Omit<ReportType, 'id' | 'created_at'>>
+            }
+            generated_reports: {
+                Row: GeneratedReport
+                Insert: Omit<GeneratedReport, 'id' | 'created_at'>
+                Update: Partial<Omit<GeneratedReport, 'id' | 'created_at'>>
+            }
+            dashboard_widgets: {
+                Row: DashboardWidget
+                Insert: Omit<DashboardWidget, 'id' | 'created_at' | 'updated_at'>
+                Update: Partial<Omit<DashboardWidget, 'id' | 'created_at' | 'updated_at'>>
+            }
+            daily_analytics: {
+                Row: DailyAnalytics
+                Insert: Omit<DailyAnalytics, 'id' | 'created_at'>
+                Update: Partial<Omit<DailyAnalytics, 'id' | 'created_at'>>
+            }
+            monthly_analytics: {
+                Row: MonthlyAnalytics
+                Insert: Omit<MonthlyAnalytics, 'id' | 'created_at'>
+                Update: Partial<Omit<MonthlyAnalytics, 'id' | 'created_at'>>
+            }
+            class_performance: {
+                Row: ClassPerformance
+                Insert: Omit<ClassPerformance, 'id' | 'created_at'>
+                Update: Partial<Omit<ClassPerformance, 'id' | 'created_at'>>
+            }
+            fee_collection_summary: {
+                Row: FeeCollectionSummary
+                Insert: Omit<FeeCollectionSummary, 'id' | 'created_at'>
+                Update: Partial<Omit<FeeCollectionSummary, 'id' | 'created_at'>>
+            }
+            fee_defaulters_snapshot: {
+                Row: FeeDefaultersSnapshot
+                Insert: Omit<FeeDefaultersSnapshot, 'id' | 'created_at'>
+                Update: Partial<Omit<FeeDefaultersSnapshot, 'id' | 'created_at'>>
+            }
         }
         Views: {
             [_ in never]: never
@@ -554,6 +702,276 @@ export type Homework = Database['public']['Tables']['homework']['Row']
 export type Broadcast = Database['public']['Tables']['broadcasts']['Row']
 export type SupportTicket = Database['public']['Tables']['support_tickets']['Row']
 
+// SMS & Notifications types
+export type SMSProvider = 'twilio' | 'zong' | 'jazz' | 'telenor' | 'custom'
+export type SMSStatus = 'pending' | 'sent' | 'delivered' | 'failed'
+export type SMSBroadcastStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
+export type SMSTargetType = 'all' | 'parents' | 'teachers' | 'staff' | 'class' | 'custom'
+export type AlertType = 'absent' | 'late' | 'leave' | 'excused'
+
+export interface SMSConfig {
+    id: string
+    school_id: string
+    provider: SMSProvider
+    api_key?: string
+    api_secret?: string
+    sender_id?: string
+    base_url?: string
+    username?: string
+    password?: string
+    is_active: boolean
+    credits_balance: number
+    monthly_limit?: number
+    created_at: string
+    updated_at: string
+}
+
+export interface SMSTemplate {
+    id: string
+    school_id: string
+    name: string
+    message: string
+    category: string
+    variables?: string[]
+    is_active: boolean
+    created_at: string
+    updated_at: string
+}
+
+export interface SMSLog {
+    id: string
+    school_id: string
+    message: string
+    recipient_phone: string
+    recipient_name?: string
+    recipient_type?: string
+    student_id?: string
+    status: SMSStatus
+    message_id?: string
+    error_message?: string
+    sent_by?: string
+    sent_at: string
+    delivered_at?: string
+    created_at: string
+}
+
+export interface SMSBroadcast {
+    id: string
+    school_id: string
+    title: string
+    message: string
+    target_type: SMSTargetType
+    target_filters?: Record<string, unknown>
+    total_recipients: number
+    sent_count: number
+    delivered_count: number
+    failed_count: number
+    scheduled_at?: string
+    sent_at?: string
+    completed_at?: string
+    sent_by?: string
+    status: SMSBroadcastStatus
+    created_at: string
+    updated_at: string
+}
+
+export interface AttendanceAlert {
+    id: string
+    school_id: string
+    attendance_id: string
+    student_id: string
+    parent_phone: string
+    alert_type: AlertType
+    message: string
+    status: SMSStatus
+    sent_at?: string
+    delivered_at?: string
+    created_at: string
+}
+
+// School settings extension
+export interface SchoolSettings {
+    working_days?: string[]
+    sms_enabled?: boolean
+    attendance_sms_enabled?: boolean
+    fee_sms_enabled?: boolean
+    default_attendance?: 'present' | 'absent'
+    academic_year_start?: string
+}
+
+// Platform SMS Configuration (Super Admin)
+export type SMSProviderType = 'twilio' | 'zong' | 'jazz' | 'telenor' | 'custom' | 'none'
+
+export interface PlatformSMSConfig {
+    id: string
+    provider: SMSProviderType
+    is_enabled: boolean
+    api_key: string
+    api_secret: string
+    sender_id: string
+    base_url: string
+    username: string
+    password: string
+    monthly_limit: number
+    rate_per_sms: number
+    balance: number
+    created_at: string
+    updated_at: string
+}
+
+// School SMS Settings
+export interface SchoolSMSSettings {
+    id: string
+    school_id: string
+    is_sms_enabled: boolean
+    monthly_limit: number
+    can_send_attendance: boolean
+    can_send_fees: boolean
+    can_send_exams: boolean
+    can_send_general: boolean
+    can_send_emergency: boolean
+    created_at: string
+    updated_at: string
+}
+
+// School SMS Permission (combined view)
+export interface SchoolSMSPermission {
+    id: string
+    school_id: string
+    school_name: string
+    school_slug: string
+    is_sms_enabled: boolean
+    monthly_limit: number
+    used_this_month: number
+    can_send_attendance: boolean
+    can_send_fees: boolean
+    can_send_exams: boolean
+    can_send_general: boolean
+    can_send_emergency: boolean
+    last_sms_sent?: string
+}
+
+// SMS Usage Stats
+export interface SMSUsageStats {
+    total_sent_today: number
+    total_sent_this_month: number
+    total_sent_all_time: number
+    delivery_rate: number
+    failed_this_month: number
+    schools_using_sms: number
+}
+
+// Platform Email Configuration (Super Admin)
+export type EmailProviderType = 'smtp' | 'sendgrid' | 'mailgun' | 'ses' | 'postmark' | 'resend' | 'none'
+
+export interface PlatformEmailConfig {
+    id: string
+    provider: EmailProviderType
+    is_enabled: boolean
+    smtp_host: string
+    smtp_port: number
+    smtp_username: string
+    smtp_password: string
+    smtp_encryption: 'none' | 'ssl' | 'tls'
+    api_key: string
+    api_secret: string
+    from_email: string
+    from_name: string
+    reply_to: string
+    monthly_limit: number
+    daily_limit: number
+    rate_per_email: number
+    created_at: string
+    updated_at: string
+}
+
+// School Email Settings
+export interface SchoolEmailSettings {
+    id: string
+    school_id: string
+    is_email_enabled: boolean
+    monthly_limit: number
+    can_send_attendance: boolean
+    can_send_fees: boolean
+    can_send_exams: boolean
+    can_send_general: boolean
+    can_send_newsletters: boolean
+    custom_from_email?: string
+    custom_from_name?: string
+    created_at: string
+    updated_at: string
+}
+
+// School Email Permission (combined view)
+export interface SchoolEmailPermission {
+    id: string
+    school_id: string
+    school_name: string
+    school_slug: string
+    is_email_enabled: boolean
+    monthly_limit: number
+    used_this_month: number
+    can_send_attendance: boolean
+    can_send_fees: boolean
+    can_send_exams: boolean
+    can_send_general: boolean
+    can_send_newsletters: boolean
+    last_email_sent?: string
+}
+
+// Email Log
+export type EmailStatus = 'pending' | 'sent' | 'delivered' | 'opened' | 'failed' | 'bounced'
+
+export interface EmailLog {
+    id: string
+    school_id?: string
+    recipient_email: string
+    recipient_name?: string
+    subject: string
+    body?: string
+    status: EmailStatus
+    message_id?: string
+    error_message?: string
+    email_type: string
+    template_id?: string
+    opened_at?: string
+    clicked_at?: string
+    bounced_at?: string
+    sent_by?: string
+    created_at: string
+    sent_at?: string
+}
+
+// Email Template
+export type EmailTemplateCategory = 'attendance' | 'fees' | 'exams' | 'general' | 'newsletter'
+
+export interface EmailTemplate {
+    id: string
+    school_id?: string
+    name: string
+    subject: string
+    body: string
+    category: EmailTemplateCategory
+    variables: string[]
+    is_active: boolean
+    usage_count: number
+    created_by?: string
+    created_at: string
+    updated_at: string
+}
+
+// Email Usage Stats
+export interface EmailUsageStats {
+    total_sent_today: number
+    total_sent_this_month: number
+    total_sent_all_time: number
+    delivery_rate: number
+    bounce_rate: number
+    open_rate: number
+    failed_this_month: number
+    schools_using_email: number
+}
+
 // Extended types with relations
 export interface StudentWithProfile extends Student {
     profile?: Profile
@@ -590,4 +1008,464 @@ export interface SuperAdminStats {
     monthlyRevenue: number
     mrr: number
     trialSchools: number
+}
+
+// ============================================
+// LIBRARY MANAGEMENT TYPES
+// ============================================
+
+export type BookStatus = 'available' | 'issued' | 'reserved' | 'lost' | 'damaged' | 'under_repair' | 'discarded'
+export type BookCondition = 'new' | 'good' | 'fair' | 'poor' | 'damaged'
+export type MemberType = 'student' | 'staff'
+export type MemberStatus = 'active' | 'suspended' | 'expired'
+export type IssueStatus = 'issued' | 'returned' | 'overdue' | 'lost'
+export type ReservationStatus = 'pending' | 'fulfilled' | 'cancelled' | 'expired'
+export type FineType = 'overdue' | 'lost' | 'damage'
+export type FineStatus = 'pending' | 'partial' | 'paid' | 'waived'
+
+export interface LibrarySettings {
+    id: string
+    school_id: string
+    fine_per_day: number
+    max_fine_amount: number
+    student_max_books: number
+    staff_max_books: number
+    student_borrow_days: number
+    staff_borrow_days: number
+    allow_renewals: boolean
+    max_renewals: number
+    reservation_expiry_days: number
+    send_due_reminders: boolean
+    reminder_days_before: number
+    created_at: string
+    updated_at: string
+}
+
+export interface BookCategory {
+    id: string
+    school_id: string
+    name: string
+    description: string | null
+    parent_id: string | null
+    is_active: boolean
+    created_at: string
+}
+
+export interface BookLocation {
+    id: string
+    school_id: string
+    name: string
+    description: string | null
+    floor: string | null
+    section: string | null
+    shelf_number: string | null
+    created_at: string
+}
+
+export interface Publisher {
+    id: string
+    school_id: string
+    name: string
+    address: string | null
+    contact_person: string | null
+    phone: string | null
+    email: string | null
+    website: string | null
+    created_at: string
+}
+
+export interface Author {
+    id: string
+    school_id: string
+    name: string
+    biography: string | null
+    nationality: string | null
+    created_at: string
+}
+
+export interface Book {
+    id: string
+    school_id: string
+    isbn: string | null
+    title: string
+    subtitle: string | null
+    edition: string | null
+    category_id: string | null
+    publisher_id: string | null
+    location_id: string | null
+    publication_year: number | null
+    pages: number | null
+    language: string
+    description: string | null
+    cover_image_url: string | null
+    total_copies: number
+    available_copies: number
+    price: number | null
+    status: BookStatus
+    created_at: string
+    updated_at: string
+}
+
+export interface BookCopy {
+    id: string
+    school_id: string
+    book_id: string
+    accession_number: string
+    status: BookStatus
+    condition: BookCondition
+    acquisition_date: string | null
+    acquisition_source: string | null
+    price_at_acquisition: number | null
+    notes: string | null
+    created_at: string
+}
+
+export interface LibraryMember {
+    id: string
+    school_id: string
+    membership_number: string
+    member_type: MemberType
+    student_id: string | null
+    staff_id: string | null
+    status: MemberStatus
+    joined_date: string
+    expiry_date: string | null
+    max_books_allowed: number
+    current_books_count: number
+    total_fines_paid: number
+    created_at: string
+    updated_at: string
+}
+
+export interface BookIssue {
+    id: string
+    school_id: string
+    book_copy_id: string
+    member_id: string
+    issue_date: string
+    due_date: string
+    return_date: string | null
+    issued_by: string
+    returned_by: string | null
+    condition_on_issue: BookCondition
+    condition_on_return: BookCondition | null
+    renewals_count: number
+    fine_amount: number
+    remarks: string | null
+    status: IssueStatus
+    created_at: string
+    updated_at: string
+}
+
+export interface BookReservation {
+    id: string
+    school_id: string
+    book_id: string
+    member_id: string
+    reservation_date: string
+    expiry_date: string
+    status: ReservationStatus
+    notified_at: string | null
+    created_at: string
+}
+
+export interface LibraryFine {
+    id: string
+    school_id: string
+    member_id: string
+    issue_id: string | null
+    fine_type: FineType
+    amount: number
+    paid_amount: number
+    status: FineStatus
+    overdue_days: number | null
+    paid_date: string | null
+    waived_by: string | null
+    waiver_reason: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface FinePayment {
+    id: string
+    school_id: string
+    fine_id: string
+    amount: number
+    payment_method: PaymentMethod
+    payment_date: string
+    collected_by: string
+    receipt_number: string | null
+    remarks: string | null
+    created_at: string
+}
+
+// ============================================
+// STAFF/HR MANAGEMENT TYPES
+// ============================================
+
+export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
+export type SalaryComponentType = 'earning' | 'deduction'
+export type PayrollStatus = 'draft' | 'processed' | 'paid' | 'cancelled'
+
+export interface StaffDepartment {
+    id: string
+    school_id: string
+    name: string
+    description: string | null
+    head_id: string | null
+    is_active: boolean
+    created_at: string
+}
+
+export interface StaffDesignation {
+    id: string
+    school_id: string
+    name: string
+    description: string | null
+    level: number | null
+    is_teaching: boolean
+    created_at: string
+}
+
+export interface LeaveTypeConfig {
+    id: string
+    school_id: string
+    name: string
+    code: string
+    max_days_per_year: number
+    is_paid: boolean
+    carry_forward: boolean
+    max_carry_forward_days: number
+    description: string | null
+    is_active: boolean
+    created_at: string
+}
+
+export interface StaffLeaveBalance {
+    id: string
+    school_id: string
+    staff_id: string
+    leave_type_id: string
+    academic_year_id: string
+    allocated_days: number
+    used_days: number
+    carried_forward: number
+    remaining_days: number
+    created_at: string
+    updated_at: string
+}
+
+export interface LeaveApplication {
+    id: string
+    school_id: string
+    staff_id: string
+    leave_type_id: string
+    start_date: string
+    end_date: string
+    days_count: number
+    reason: string | null
+    status: LeaveStatus
+    approved_by: string | null
+    approved_at: string | null
+    rejection_reason: string | null
+    documents: string[] | null
+    created_at: string
+    updated_at: string
+}
+
+export interface SalaryComponent {
+    id: string
+    school_id: string
+    name: string
+    code: string
+    type: SalaryComponentType
+    is_taxable: boolean
+    is_fixed: boolean
+    calculation_formula: string | null
+    description: string | null
+    is_active: boolean
+    created_at: string
+}
+
+export interface StaffSalaryStructure {
+    id: string
+    school_id: string
+    staff_id: string
+    component_id: string
+    amount: number
+    effective_from: string
+    effective_to: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface Payroll {
+    id: string
+    school_id: string
+    payroll_month: string
+    payroll_year: number
+    status: PayrollStatus
+    total_gross: number
+    total_deductions: number
+    total_net: number
+    staff_count: number
+    processed_by: string | null
+    processed_at: string | null
+    paid_at: string | null
+    remarks: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface PayrollTransaction {
+    id: string
+    school_id: string
+    payroll_id: string
+    staff_id: string
+    basic_salary: number
+    gross_salary: number
+    total_deductions: number
+    net_salary: number
+    earnings_breakdown: Record<string, number>
+    deductions_breakdown: Record<string, number>
+    working_days: number
+    present_days: number
+    leave_days: number
+    payment_method: PaymentMethod | null
+    payment_reference: string | null
+    paid_at: string | null
+    created_at: string
+}
+
+// ============================================
+// REPORTS & ANALYTICS TYPES
+// ============================================
+
+export type ReportCategory = 'academic' | 'financial' | 'attendance' | 'staff' | 'library' | 'transport' | 'custom'
+export type ReportFormat = 'pdf' | 'excel' | 'csv'
+export type ReportStatus = 'pending' | 'generating' | 'completed' | 'failed'
+
+export interface ReportType {
+    id: string
+    name: string
+    code: string
+    category: ReportCategory
+    description: string | null
+    template: Record<string, unknown> | null
+    default_filters: Record<string, unknown> | null
+    is_system: boolean
+    is_active: boolean
+    created_at: string
+}
+
+export interface GeneratedReport {
+    id: string
+    school_id: string
+    report_type_id: string
+    name: string
+    filters: Record<string, unknown> | null
+    format: ReportFormat
+    file_url: string | null
+    file_size: number | null
+    status: ReportStatus
+    error_message: string | null
+    generated_by: string
+    generated_at: string | null
+    expires_at: string | null
+    created_at: string
+}
+
+export interface DashboardWidget {
+    id: string
+    school_id: string
+    user_id: string | null
+    name: string
+    widget_type: string
+    config: Record<string, unknown>
+    position: number
+    is_visible: boolean
+    created_at: string
+    updated_at: string
+}
+
+export interface DailyAnalytics {
+    id: string
+    school_id: string
+    date: string
+    total_students: number
+    present_students: number
+    absent_students: number
+    late_students: number
+    total_staff: number
+    present_staff: number
+    fee_collected: number
+    fee_pending: number
+    new_inquiries: number
+    new_admissions: number
+    library_issues: number
+    library_returns: number
+    created_at: string
+}
+
+export interface MonthlyAnalytics {
+    id: string
+    school_id: string
+    month: number
+    year: number
+    avg_student_attendance: number
+    avg_staff_attendance: number
+    total_fee_collected: number
+    total_fee_pending: number
+    total_expenses: number
+    new_admissions: number
+    withdrawals: number
+    total_inquiries: number
+    conversion_rate: number
+    created_at: string
+}
+
+export interface ClassPerformance {
+    id: string
+    school_id: string
+    class_id: string
+    exam_id: string
+    total_students: number
+    appeared_students: number
+    passed_students: number
+    failed_students: number
+    highest_marks: number
+    lowest_marks: number
+    average_marks: number
+    pass_percentage: number
+    grade_distribution: Record<string, number>
+    subject_wise_avg: Record<string, number>
+    created_at: string
+}
+
+export interface FeeCollectionSummary {
+    id: string
+    school_id: string
+    month: number
+    year: number
+    total_expected: number
+    total_collected: number
+    total_pending: number
+    total_discount: number
+    total_fine_collected: number
+    collection_by_type: Record<string, number>
+    collection_by_class: Record<string, number>
+    payment_method_breakdown: Record<string, number>
+    created_at: string
+}
+
+export interface FeeDefaultersSnapshot {
+    id: string
+    school_id: string
+    snapshot_date: string
+    total_defaulters: number
+    total_amount_due: number
+    defaulters_by_class: Record<string, number>
+    amount_by_class: Record<string, number>
+    age_wise_breakdown: Record<string, unknown>
+    created_at: string
 }

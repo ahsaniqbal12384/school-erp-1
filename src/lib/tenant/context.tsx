@@ -77,7 +77,7 @@ export function TenantProvider({ children, schoolSlug }: TenantProviderProps) {
                 .eq('is_enabled', true)
 
             if (modulesData) {
-                setModules(modulesData.map(m => m.module_name as ModuleName))
+                setModules(modulesData.map((m: { module_name: string }) => m.module_name as ModuleName))
             }
 
             setIsLoading(false)

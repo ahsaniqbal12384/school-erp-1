@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { type LucideIcon } from 'lucide-react'
+import { type ElementType } from 'react'
 
 interface StatCardProps {
     title: string
@@ -15,7 +15,7 @@ interface StatCardProps {
         label?: string
         positive?: boolean
     }
-    icon: LucideIcon
+    icon: ElementType
     iconColor?: string
     description?: string
     className?: string
@@ -98,7 +98,7 @@ interface CurrencyStatCardProps {
         label?: string
         positive?: boolean
     }
-    icon: LucideIcon
+    icon: ElementType
     iconColor?: string
     className?: string
 }

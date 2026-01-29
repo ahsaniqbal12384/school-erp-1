@@ -26,14 +26,19 @@ import {
     Wallet,
     FileText,
     UserCheck,
-    type LucideIcon,
+    MessageSquare,
+    Mail,
+    BarChart3,
+    PieChart,
+    TrendingUp,
+    Receipt,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ElementType } from 'react'
 
 interface NavItem {
     title: string
     href: string
-    icon: LucideIcon
+    icon: ElementType
     badge?: string
     children?: NavItem[]
 }
@@ -47,6 +52,8 @@ const superAdminNav: NavItem[] = [
     { title: 'Dashboard', href: '/super-admin', icon: LayoutDashboard },
     { title: 'Schools', href: '/super-admin/schools', icon: Building2 },
     { title: 'Subscriptions', href: '/super-admin/subscriptions', icon: Wallet },
+    { title: 'SMS Configuration', href: '/super-admin/sms', icon: MessageSquare },
+    { title: 'Email Configuration', href: '/super-admin/email', icon: Mail },
     { title: 'Support Tickets', href: '/super-admin/tickets', icon: HelpCircle, badge: '5' },
     { title: 'Reports', href: '/super-admin/reports', icon: FileText },
     { title: 'Settings', href: '/super-admin/settings', icon: Settings },
@@ -80,6 +87,7 @@ const schoolAdminNav: NavItem[] = [
         icon: Users,
         children: [
             { title: 'All Staff', href: '/school/admin/staff', icon: Users },
+            { title: 'Departments', href: '/school/admin/staff/departments', icon: Building2 },
             { title: 'Payroll', href: '/school/admin/staff/payroll', icon: Wallet },
             { title: 'Attendance', href: '/school/admin/staff/attendance', icon: UserCheck },
             { title: 'Leaves', href: '/school/admin/staff/leaves', icon: Calendar },
@@ -97,7 +105,18 @@ const schoolAdminNav: NavItem[] = [
         ]
     },
     { title: 'Transport', href: '/school/admin/transport', icon: Bus },
-    { title: 'Library', href: '/school/admin/library', icon: BookOpen },
+    {
+        title: 'Library',
+        href: '/school/admin/library',
+        icon: BookOpen,
+        children: [
+            { title: 'Catalog', href: '/school/admin/library', icon: BookOpen },
+            { title: 'Issue/Return', href: '/school/admin/library/issues', icon: FileText },
+            { title: 'Members', href: '/school/admin/library/members', icon: Users },
+            { title: 'Fines', href: '/school/admin/library/fines', icon: Receipt },
+            { title: 'Settings', href: '/school/admin/library/settings', icon: Settings },
+        ]
+    },
     {
         title: 'Exams & Grades',
         href: '/school/admin/exams',
@@ -108,7 +127,29 @@ const schoolAdminNav: NavItem[] = [
             { title: 'Report Cards', href: '/school/admin/exams/reports', icon: FileText },
         ]
     },
-    { title: 'Communication', href: '/school/admin/communications/broadcasts', icon: Bell },
+    {
+        title: 'Communication',
+        href: '/school/admin/communications',
+        icon: Bell,
+        children: [
+            { title: 'Broadcasts', href: '/school/admin/communications/broadcasts', icon: Bell },
+            { title: 'SMS', href: '/school/admin/communications/sms', icon: MessageSquare },
+            { title: 'Email', href: '/school/admin/communications/email', icon: Mail },
+            { title: 'Templates', href: '/school/admin/communications/templates', icon: FileText },
+        ]
+    },
+    {
+        title: 'Reports & Analytics',
+        href: '/school/admin/reports',
+        icon: BarChart3,
+        children: [
+            { title: 'Dashboard', href: '/school/admin/reports', icon: PieChart },
+            { title: 'Fee Reports', href: '/school/admin/reports/fees', icon: Receipt },
+            { title: 'Attendance Reports', href: '/school/admin/reports/attendance', icon: UserCheck },
+            { title: 'Academic Reports', href: '/school/admin/reports/academic', icon: TrendingUp },
+            { title: 'Staff Reports', href: '/school/admin/reports/staff', icon: Users },
+        ]
+    },
     { title: 'Settings', href: '/school/admin/settings', icon: Settings },
 ]
 

@@ -78,6 +78,13 @@ interface SchoolSettingsData {
     student_portal_enabled: boolean
     online_payment_enabled: boolean
     biometric_attendance: boolean
+    // Attendance Settings
+    attendance_default_status: 'present' | 'absent'
+    attendance_sms_enabled: boolean
+    attendance_late_threshold_minutes: number
+    attendance_low_threshold_percent: number
+    attendance_auto_sms_absent: boolean
+    attendance_auto_sms_late: boolean
 }
 
 const defaultSettings: SchoolSettingsData = {
@@ -112,6 +119,13 @@ const defaultSettings: SchoolSettingsData = {
     student_portal_enabled: true,
     online_payment_enabled: false,
     biometric_attendance: false,
+    // Attendance Settings Defaults
+    attendance_default_status: 'present',
+    attendance_sms_enabled: true,
+    attendance_late_threshold_minutes: 15,
+    attendance_low_threshold_percent: 75,
+    attendance_auto_sms_absent: true,
+    attendance_auto_sms_late: false,
 }
 
 const weekDays = [
@@ -202,7 +216,7 @@ export default function SchoolSettingsPage() {
             </Card>
 
             <Tabs defaultValue="general" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="general">
                         <Building2 className="mr-2 h-4 w-4" />
                         General
@@ -214,6 +228,10 @@ export default function SchoolSettingsPage() {
                     <TabsTrigger value="academic">
                         <Calendar className="mr-2 h-4 w-4" />
                         Academic
+                    </TabsTrigger>
+                    <TabsTrigger value="attendance">
+                        <Clock className="mr-2 h-4 w-4" />
+                        Attendance
                     </TabsTrigger>
                     <TabsTrigger value="notifications">
                         <Bell className="mr-2 h-4 w-4" />
@@ -613,6 +631,145 @@ export default function SchoolSettingsPage() {
                                                 <SelectItem value="24h">24 Hour</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                {/* Attendance Settings */}
+                <TabsContent value="attendance">
+                    <div className="grid gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Attendance Configuration</CardTitle>
+                                <CardDescription>Configure how attendance is marked and tracked</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                                                <CheckCircle className="h-5 w-5 text-blue-500" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">Default Attendance Status</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    All students are marked as this status by default. Teachers only change exceptions.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Select
+                                            value={settings.attendance_default_status}
+                                            onValueChange={(v: 'present' | 'absent') => setSettings({ ...settings, attendance_default_status: v })}
+                                        >
+                                            <SelectTrigger className="w-[140px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="present">Present</SelectItem>
+                                                <SelectItem value="absent">Absent</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label>Late Threshold (minutes)</Label>
+                                            <Input
+                                                type="number"
+                                                value={settings.attendance_late_threshold_minutes}
+                                                onChange={(e) => setSettings({ ...settings, attendance_late_threshold_minutes: parseInt(e.target.value) || 15 })}
+                                                min={5}
+                                                max={60}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Students arriving after this many minutes are marked late
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Low Attendance Alert (%)</Label>
+                                            <Input
+                                                type="number"
+                                                value={settings.attendance_low_threshold_percent}
+                                                onChange={(e) => setSettings({ ...settings, attendance_low_threshold_percent: parseInt(e.target.value) || 75 })}
+                                                min={50}
+                                                max={90}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Alert parents when attendance falls below this percentage
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Attendance SMS Alerts</CardTitle>
+                                <CardDescription>Configure automatic SMS notifications for attendance</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between p-4 rounded-lg border">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                                            <MessageSquare className="h-5 w-5 text-green-500" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Enable Attendance SMS</p>
+                                            <p className="text-sm text-muted-foreground">Send SMS alerts for attendance-related events</p>
+                                        </div>
+                                    </div>
+                                    <Switch
+                                        checked={settings.attendance_sms_enabled}
+                                        onCheckedChange={(v) => setSettings({ ...settings, attendance_sms_enabled: v })}
+                                    />
+                                </div>
+
+                                {settings.attendance_sms_enabled && (
+                                    <>
+                                        <div className="flex items-center justify-between p-4 rounded-lg border ml-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10">
+                                                    <Clock className="h-4 w-4 text-red-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-sm">Auto SMS on Absent</p>
+                                                    <p className="text-xs text-muted-foreground">Automatically notify parents when student is absent</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.attendance_auto_sms_absent}
+                                                onCheckedChange={(v) => setSettings({ ...settings, attendance_auto_sms_absent: v })}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-4 rounded-lg border ml-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/10">
+                                                    <Clock className="h-4 w-4 text-yellow-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-sm">Auto SMS on Late</p>
+                                                    <p className="text-xs text-muted-foreground">Automatically notify parents when student arrives late</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={settings.attendance_auto_sms_late}
+                                                onCheckedChange={(v) => setSettings({ ...settings, attendance_auto_sms_late: v })}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="p-4 rounded-lg bg-muted/50">
+                                    <h4 className="font-medium text-sm mb-2">Sample SMS Messages</h4>
+                                    <div className="space-y-2 text-sm text-muted-foreground">
+                                        <p>📱 <strong>Absent:</strong> &quot;Dear Parent, [Student Name] was marked ABSENT on [Date]. Please contact the school if this is incorrect.&quot;</p>
+                                        <p>📱 <strong>Late:</strong> &quot;Dear Parent, [Student Name] arrived LATE on [Date] at [Time].&quot;</p>
+                                        <p>📱 <strong>Low Attendance:</strong> &quot;Dear Parent, [Student Name]&apos;s attendance is [X]%. Please ensure regular attendance.&quot;</p>
                                     </div>
                                 </div>
                             </CardContent>
