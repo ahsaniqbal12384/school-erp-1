@@ -6,10 +6,13 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
     GraduationCap,
     Mail,
@@ -37,6 +40,12 @@ interface RoleOption {
     color: string
 }
 
+interface School {
+    id: string
+    name: string
+    slug: string
+}
+
 function LoginForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -50,6 +59,12 @@ function LoginForm() {
     const [schoolSlug, setSchoolSlug] = useState<string | null>(null)
     const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null)
     const [isMainDomain, setIsMainDomain] = useState(false)
+    
+    // For main domain school portal
+    const [schools, setSchools] = useState<School[]>([])
+    const [selectedSchool, setSelectedSchool] = useState<string>('')
+    const [loadingSchools, setLoadingSchools] = useState(false)
+    const [activeTab, setActiveTab] = useState<'super-admin' | 'school-portal'>('super-admin')
 
     // Role options for school portal (no super_admin)
     const schoolRoles: RoleOption[] = [
@@ -82,6 +97,30 @@ function LoginForm() {
             color: 'from-orange-500 to-amber-600',
         },
     ]
+
+    // Fetch schools for main domain school portal
+    useEffect(() => {
+        async function fetchSchools() {
+            if (!isMainDomain) return
+            setLoadingSchools(true)
+            try {
+                const supabase = createClient()
+                const { data, error } = await supabase
+                    .from('schools')
+                    .select('id, name, slug')
+                    .eq('status', 'active')
+                    .order('name')
+                
+                if (error) throw error
+                setSchools(data || [])
+            } catch (err) {
+                console.error('Failed to fetch schools:', err)
+            } finally {
+                setLoadingSchools(false)
+            }
+        }
+        fetchSchools()
+    }, [isMainDomain])
 
     useEffect(() => {
         // Redirect if already logged in
@@ -163,7 +202,7 @@ function LoginForm() {
         setError('')
     }
 
-    // Super Admin Login Page (Main Domain)
+    // Main Domain Login Page - Super Admin + School Portal
     if (isMainDomain) {
         return (
             <div className="min-h-screen flex">
@@ -184,19 +223,23 @@ function LoginForm() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold">School ERP</h1>
-                            <p className="text-sm text-white/60">Super Admin Portal</p>
+                            <p className="text-sm text-white/60">Management Platform</p>
                         </div>
                     </div>
 
                     <div className="space-y-6 relative z-10">
                         <h2 className="text-5xl font-bold leading-tight">
-                            Platform<br />
-                            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                Control Center
-                            </span>
+                            {activeTab === 'super-admin' ? (
+                                <>Platform<br /><span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Control Center</span></>
+                            ) : (
+                                <>School<br /><span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Portal Access</span></>
+                            )}
                         </h2>
                         <p className="text-lg text-white/70 max-w-md">
-                            Manage all schools, monitor subscriptions, and control platform-wide settings from one central dashboard.
+                            {activeTab === 'super-admin' 
+                                ? 'Manage all schools, monitor subscriptions, and control platform-wide settings from one central dashboard.'
+                                : 'Access any school portal to manage academics, attendance, fees, and more with your role-based dashboard.'
+                            }
                         </p>
                         <div className="flex gap-4 pt-4">
                             <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur">
@@ -220,73 +263,226 @@ function LoginForm() {
                             <div className="h-16 w-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
                                 <Shield className="h-9 w-9 text-white" />
                             </div>
-                            <h1 className="text-2xl font-bold">Super Admin Portal</h1>
+                            <h1 className="text-2xl font-bold">School ERP Platform</h1>
                         </div>
 
-                        <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
-                            <CardHeader className="text-center pb-2">
-                                <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-                                <CardDescription>Sign in to access the admin dashboard</CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-4">
-                                <form onSubmit={handleLogin} className="space-y-4">
-                                    {error && (
-                                        <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-lg flex items-center gap-2 text-sm">
-                                            <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
-                                        </div>
-                                    )}
+                        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'super-admin' | 'school-portal'); setError(''); setSelectedRole(null); }}>
+                            <TabsList className="grid w-full grid-cols-2 mb-6">
+                                <TabsTrigger value="super-admin" className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4" />
+                                    Super Admin
+                                </TabsTrigger>
+                                <TabsTrigger value="school-portal" className="flex items-center gap-2">
+                                    <GraduationCap className="h-4 w-4" />
+                                    School Portal
+                                </TabsTrigger>
+                            </TabsList>
 
-                                    <div className="space-y-2">
-                                        <Label>Email Address</Label>
-                                        <div className="relative group">
-                                            <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-purple-500" />
-                                            <Input
-                                                type="email"
-                                                placeholder="superadmin@erp.pk"
-                                                className="pl-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
+                            {/* Super Admin Login */}
+                            <TabsContent value="super-admin">
+                                <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+                                    <CardHeader className="text-center pb-2">
+                                        <CardTitle className="text-2xl font-bold">Super Admin</CardTitle>
+                                        <CardDescription>Sign in to access platform management</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="pt-4">
+                                        <form onSubmit={handleLogin} className="space-y-4">
+                                            {error && (
+                                                <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-lg flex items-center gap-2 text-sm">
+                                                    <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
+                                                </div>
+                                            )}
 
-                                    <div className="space-y-2">
-                                        <Label>Password</Label>
-                                        <div className="relative group">
-                                            <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-purple-500" />
-                                            <Input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="••••••••"
-                                                className="pl-11 pr-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                required
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                            <div className="space-y-2">
+                                                <Label>Email Address</Label>
+                                                <div className="relative group">
+                                                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-purple-500" />
+                                                    <Input
+                                                        type="email"
+                                                        placeholder="superadmin@erp.pk"
+                                                        className="pl-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Password</Label>
+                                                <div className="relative group">
+                                                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-purple-500" />
+                                                    <Input
+                                                        type={showPassword ? "text" : "password"}
+                                                        placeholder="••••••••"
+                                                        className="pl-11 pr-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                type="submit"
+                                                className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold shadow-lg shadow-purple-500/30"
+                                                disabled={isLoading || authLoading}
                                             >
-                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                            </button>
-                                        </div>
-                                    </div>
+                                                {isLoading ? (
+                                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                ) : (
+                                                    <>Sign In <ArrowRight className="ml-2 h-5 w-5" /></>
+                                                )}
+                                            </Button>
+                                        </form>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
 
-                                    <Button
-                                        type="submit"
-                                        className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold shadow-lg shadow-purple-500/30"
-                                        disabled={isLoading || authLoading}
-                                    >
-                                        {isLoading ? (
-                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        ) : (
-                                            <>Sign In <ArrowRight className="ml-2 h-5 w-5" /></>
-                                        )}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
+                            {/* School Portal Login */}
+                            <TabsContent value="school-portal">
+                                {!selectedRole ? (
+                                    <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+                                        <CardHeader className="text-center pb-2">
+                                            <CardTitle className="text-xl font-bold">School Portal</CardTitle>
+                                            <CardDescription>Select a school and your role to continue</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="pt-4 space-y-4">
+                                            {/* School Selection */}
+                                            <div className="space-y-2">
+                                                <Label>Select School</Label>
+                                                <Select value={selectedSchool} onValueChange={setSelectedSchool}>
+                                                    <SelectTrigger className="h-12 bg-gray-50 dark:bg-gray-700">
+                                                        <SelectValue placeholder={loadingSchools ? "Loading schools..." : "Choose a school"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {schools.map((school) => (
+                                                            <SelectItem key={school.id} value={school.id}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Building2 className="h-4 w-4 text-primary" />
+                                                                    {school.name}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Role Selection */}
+                                            {selectedSchool && (
+                                                <div className="space-y-3">
+                                                    <Label>Select Your Role</Label>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {schoolRoles.map((role) => (
+                                                            <button
+                                                                key={role.id}
+                                                                onClick={() => handleRoleSelect(role.id)}
+                                                                className="group relative p-4 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-100 dark:border-gray-600 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                                                            >
+                                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${role.color} flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform shadow`}>
+                                                                    {role.icon}
+                                                                </div>
+                                                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{role.label}</h3>
+                                                                <p className="text-xs text-gray-500 dark:text-gray-400">{role.description}</p>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+                                        <CardHeader className="pb-2">
+                                            <button
+                                                onClick={() => setSelectedRole(null)}
+                                                className="text-sm text-primary hover:underline mb-2 flex items-center gap-1"
+                                            >
+                                                ← Change Role
+                                            </button>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${schoolRoles.find(r => r.id === selectedRole)?.color} flex items-center justify-center text-white shadow-lg`}>
+                                                    {schoolRoles.find(r => r.id === selectedRole)?.icon}
+                                                </div>
+                                                <div>
+                                                    <CardTitle className="text-lg">
+                                                        {schoolRoles.find(r => r.id === selectedRole)?.label} Login
+                                                    </CardTitle>
+                                                    <CardDescription>
+                                                        {schools.find(s => s.id === selectedSchool)?.name}
+                                                    </CardDescription>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="pt-4">
+                                            <form onSubmit={handleLogin} className="space-y-4">
+                                                {error && (
+                                                    <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-lg flex items-center gap-2 text-sm">
+                                                        <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-2">
+                                                    <Label>Email Address</Label>
+                                                    <div className="relative group">
+                                                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-primary" />
+                                                        <Input
+                                                            type="email"
+                                                            placeholder="your.email@school.pk"
+                                                            className="pl-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                                                            value={email}
+                                                            onChange={(e) => setEmail(e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label>Password</Label>
+                                                    <div className="relative group">
+                                                        <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-primary" />
+                                                        <Input
+                                                            type={showPassword ? "text" : "password"}
+                                                            placeholder="••••••••"
+                                                            className="pl-11 pr-11 h-12 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                                                            value={password}
+                                                            onChange={(e) => setPassword(e.target.value)}
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                                        >
+                                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    className="w-full h-12 gradient-primary font-semibold"
+                                                    disabled={isLoading || authLoading}
+                                                >
+                                                    {isLoading ? (
+                                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                    ) : (
+                                                        <>Sign In <ArrowRight className="ml-2 h-5 w-5" /></>
+                                                    )}
+                                                </Button>
+                                            </form>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </div>
             </div>
