@@ -100,9 +100,12 @@ function LoginForm() {
             const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000'
 
             // Check if we're on the main domain (no subdomain)
+            // Also check for Vercel preview URLs (*.vercel.app)
             const isMain = hostname === 'localhost' ||
                 hostname === mainDomain.split(':')[0] ||
                 hostname.startsWith('www.') ||
+                hostname.endsWith('.vercel.app') ||  // Vercel deployments
+                hostname.endsWith('.netlify.app') || // Netlify deployments
                 !hostname.includes('.')
 
             if (isMain) {
