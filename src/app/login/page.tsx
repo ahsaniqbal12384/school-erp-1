@@ -349,60 +349,35 @@ function LoginForm() {
                             {/* School Portal Login */}
                             <TabsContent value="school-portal">
                                 {!selectedRole ? (
-                                    <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
-                                        <CardHeader className="text-center pb-2">
-                                            <CardTitle className="text-xl font-bold">School Portal</CardTitle>
-                                            <CardDescription>Select a school and your role to continue</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="pt-4 space-y-4">
-                                            {/* School Selection */}
-                                            <div className="space-y-2">
-                                                <Label>Select School</Label>
-                                                <Select value={selectedSchool} onValueChange={setSelectedSchool}>
-                                                    <SelectTrigger className="h-12 bg-gray-50 dark:bg-gray-700">
-                                                        <SelectValue placeholder={loadingSchools ? "Loading schools..." : "Choose a school"} />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {schools.map((school) => (
-                                                            <SelectItem key={school.id} value={school.id}>
-                                                                <div className="flex items-center gap-2">
-                                                                    <Building2 className="h-4 w-4 text-primary" />
-                                                                    {school.name}
-                                                                </div>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                    // Step 1: Role Selection - Show all roles first
+                                    <div className="space-y-6">
+                                        <div className="text-center">
+                                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Select Your Role</h2>
+                                            <p className="text-gray-500 dark:text-gray-400 mt-1">Choose how you want to sign in</p>
+                                        </div>
 
-                                            {/* Role Selection */}
-                                            {selectedSchool && (
-                                                <div className="space-y-3">
-                                                    <Label>Select Your Role</Label>
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        {schoolRoles.map((role) => (
-                                                            <button
-                                                                key={role.id}
-                                                                onClick={() => handleRoleSelect(role.id)}
-                                                                className="group relative p-4 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-100 dark:border-gray-600 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-                                                            >
-                                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${role.color} flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform shadow`}>
-                                                                    {role.icon}
-                                                                </div>
-                                                                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{role.label}</h3>
-                                                                <p className="text-xs text-gray-500 dark:text-gray-400">{role.description}</p>
-                                                            </button>
-                                                        ))}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {schoolRoles.map((role) => (
+                                                <button
+                                                    key={role.id}
+                                                    onClick={() => handleRoleSelect(role.id)}
+                                                    className="group relative p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1"
+                                                >
+                                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.color} flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+                                                        {role.icon}
                                                     </div>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
+                                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">{role.label}</h3>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{role.description}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 ) : (
+                                    // Step 2: School Selection + Login Form
                                     <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
                                         <CardHeader className="pb-2">
                                             <button
-                                                onClick={() => setSelectedRole(null)}
+                                                onClick={() => { setSelectedRole(null); setSelectedSchool(''); }}
                                                 className="text-sm text-primary hover:underline mb-2 flex items-center gap-1"
                                             >
                                                 ← Change Role
@@ -416,7 +391,7 @@ function LoginForm() {
                                                         {schoolRoles.find(r => r.id === selectedRole)?.label} Login
                                                     </CardTitle>
                                                     <CardDescription>
-                                                        {schools.find(s => s.id === selectedSchool)?.name}
+                                                        {selectedSchool ? schools.find(s => s.id === selectedSchool)?.name : 'Select a school to continue'}
                                                     </CardDescription>
                                                 </div>
                                             </div>
@@ -428,6 +403,26 @@ function LoginForm() {
                                                         <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
                                                     </div>
                                                 )}
+
+                                                {/* School Selection */}
+                                                <div className="space-y-2">
+                                                    <Label>Select School</Label>
+                                                    <Select value={selectedSchool} onValueChange={setSelectedSchool}>
+                                                        <SelectTrigger className="h-12 bg-gray-50 dark:bg-gray-700">
+                                                            <SelectValue placeholder={loadingSchools ? "Loading schools..." : "Choose a school"} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {schools.map((school) => (
+                                                                <SelectItem key={school.id} value={school.id}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Building2 className="h-4 w-4 text-primary" />
+                                                                        {school.name}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
 
                                                 <div className="space-y-2">
                                                     <Label>Email Address</Label>
@@ -469,7 +464,7 @@ function LoginForm() {
                                                 <Button
                                                     type="submit"
                                                     className="w-full h-12 gradient-primary font-semibold"
-                                                    disabled={isLoading || authLoading}
+                                                    disabled={isLoading || authLoading || !selectedSchool}
                                                 >
                                                     {isLoading ? (
                                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
