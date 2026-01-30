@@ -20,7 +20,8 @@ export const supabase = typeof window !== 'undefined' ? initSupabase() : null
 // For client components - returns the singleton
 export const createClient = () => {
     if (typeof window === 'undefined') {
-        throw new Error('Supabase client can only be used in the browser')
+        // Return a dummy client during SSR/build that won't be used
+        return createSupabaseClient(supabaseUrl, supabaseAnonKey)
     }
     return initSupabase()
 }
